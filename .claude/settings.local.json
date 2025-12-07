@@ -4,7 +4,10 @@
       "Bash(find:*)",
       "Bash(ls:*)",
       "Bash(brew list:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "WebSearch",
+      "Bash(cmake:*)",
+      "Bash(./build/pathview)"
     ],
     "deny": [],
     "ask": []

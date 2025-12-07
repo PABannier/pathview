@@ -11,6 +11,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Find SDL2 via vcpkg
 find_package(SDL2 CONFIG REQUIRED)
 find_package(SDL2_image CONFIG REQUIRED)
+find_package(nfd CONFIG REQUIRED)
 
 # Find OpenSlide using custom module
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
@@ -65,6 +66,7 @@ target_link_libraries(pathview PRIVATE
     SDL2::SDL2
     $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_image>,SDL2_image::SDL2_image,SDL2_image::SDL2_image-static>
     ${OPENSLIDE_LIBRARIES}
+    nfd::nfd
 )
 
 # Platform-specific settings

@@ -7,6 +7,7 @@
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_sdlrenderer2.h"
+#include <nfd.hpp>
 #include <iostream>
 
 Application::Application()
@@ -307,15 +308,29 @@ void Application::RenderUI() {
 }
 
 void Application::OpenFileDialog() {
-    // For now, just print a message
-    // In Phase 7, we'll integrate a proper file dialog
-    std::cout << "File dialog would open here" << std::endl;
-    std::cout << "For testing, you can call LoadSlide() with a path:" << std::endl;
-    std::cout << "  Example: app.LoadSlide(\"/path/to/slide.svs\");" << std::endl;
+    // Initialize NFD
+    NFD::Guard nfdGuard;
 
-    // Test with a hardcoded path if you have a sample slide
-    // Uncomment and modify this line:
-    LoadSlide("/Users/pbannier/Downloads/TCGA-A6-2686-01Z-00-DX1.0540a027-2a0c-46c7-9af0-7b8672631de7.svs");
+    // Configure file filters for whole-slide image formats
+    nfdfilteritem_t filters[] = {
+        { "Whole-Slide Images", "svs,tiff,tif,ndpi,vms,vmu,scn,mrxs,bif,svslide" },
+        { "All Files", "*" }
+    };
+
+    // Open file dialog
+    NFD::UniquePath outPath;
+    nfdresult_t result = NFD::OpenDialog(outPath, filters, 2);
+
+    if (result == NFD_OKAY) {
+        std::cout << "Selected file: " << outPath.get() << std::endl;
+        LoadSlide(outPath.get());
+    }
+    else if (result == NFD_CANCEL) {
+        std::cout << "File dialog cancelled" << std::endl;
+    }
+    else {
+        std::cerr << "File dialog error: " << NFD::GetError() << std::endl;
+    }
 }
 
 void Application::LoadSlide(const std::string& path) {
