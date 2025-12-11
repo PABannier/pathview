@@ -82,6 +82,7 @@ public:
     // Get class information for UI legend
     const std::vector<int>& GetClassIds() const { return classIds_; }
     int GetPolygonCount() const { return static_cast<int>(polygons_.size()); }
+    const std::vector<Polygon>& GetPolygons() const { return polygons_; }
 
     // Get slide dimensions (for spatial index)
     void SetSlideDimensions(double width, double height) {
