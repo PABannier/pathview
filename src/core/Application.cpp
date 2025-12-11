@@ -6,6 +6,8 @@
 #include "Minimap.h"
 #include "PolygonOverlay.h"
 #include "AnnotationManager.h"
+#include "../api/ipc/IPCServer.h"
+#include "../api/ipc/IPCMessage.h"
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_sdlrenderer2.h"
@@ -88,6 +90,18 @@ bool Application::Initialize() {
     // Create annotation manager
     annotationManager_ = std::make_unique<AnnotationManager>(renderer_);
 
+    // Create IPC server for remote control
+    ipcServer_ = std::make_unique<pathview::ipc::IPCServer>(
+        [this](const std::string& method, const pathview::ipc::json& params) {
+            return HandleIPCCommand(method, params);
+        }
+    );
+
+    if (!ipcServer_->Start()) {
+        std::cerr << "Warning: Failed to start IPC server (non-fatal)" << std::endl;
+        // Non-fatal - GUI works without IPC
+    }
+
     std::cout << "PathView initialized successfully" << std::endl;
     running_ = true;
     return true;
@@ -105,6 +119,9 @@ void Application::Shutdown() {
     if (!window_ && !renderer_) {
         return;
     }
+
+    // Stop IPC server first
+    ipcServer_.reset();
 
     annotationManager_.reset();
     polygonOverlay_.reset();
@@ -236,6 +253,11 @@ void Application::ProcessEvents() {
             SDL_GetMouseState(&mouseX, &mouseY);
             annotationManager_->UpdateMousePosition(viewport_->ScreenToSlide(Vec2(mouseX, mouseY)));
         }
+    }
+
+    // Process IPC messages (non-blocking, max 10ms per frame for 60 FPS)
+    if (ipcServer_) {
+        ipcServer_->ProcessMessages(10);
     }
 }
 
@@ -677,6 +699,188 @@ void Application::RenderPolygonTab() {
         ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f),
                           "No polygons loaded");
         ImGui::Text("Use File -> Load Polygons...");
+    }
+}
+
+// IPC command handler
+pathview::ipc::json Application::HandleIPCCommand(const std::string& method, const pathview::ipc::json& params) {
+    using namespace pathview::ipc;
+
+    try {
+        // Viewport commands
+        if (method == "viewport.pan") {
+            if (!viewport_) {
+                throw std::runtime_error("No slide loaded");
+            }
+
+            double dx = params.at("dx").get<double>();
+            double dy = params.at("dy").get<double>();
+            viewport_->Pan(Vec2(dx, dy));
+
+            Vec2 pos = viewport_->GetPosition();
+            return json{
+                {"position", {{"x", pos.x}, {"y", pos.y}}},
+                {"zoom", viewport_->GetZoom()}
+            };
+        }
+        else if (method == "viewport.zoom") {
+            if (!viewport_) {
+                throw std::runtime_error("No slide loaded");
+            }
+
+            double delta = params.at("delta").get<double>();
+
+            // Zoom at center of viewport
+            Vec2 center(windowWidth_ / 2.0, windowHeight_ / 2.0);
+            viewport_->ZoomAtPoint(center, delta);
+
+            return json{
+                {"zoom", viewport_->GetZoom()},
+                {"position", {
+                    {"x", viewport_->GetPosition().x},
+                    {"y", viewport_->GetPosition().y}
+                }}
+            };
+        }
+        else if (method == "viewport.zoom_at_point") {
+            if (!viewport_) {
+                throw std::runtime_error("No slide loaded");
+            }
+
+            int screenX = params.at("screen_x").get<int>();
+            int screenY = params.at("screen_y").get<int>();
+            double delta = params.at("delta").get<double>();
+
+            viewport_->ZoomAtPoint(Vec2(screenX, screenY), delta);
+
+            return json{
+                {"zoom", viewport_->GetZoom()},
+                {"position", {
+                    {"x", viewport_->GetPosition().x},
+                    {"y", viewport_->GetPosition().y}
+                }}
+            };
+        }
+        else if (method == "viewport.center_on") {
+            if (!viewport_) {
+                throw std::runtime_error("No slide loaded");
+            }
+
+            double x = params.at("x").get<double>();
+            double y = params.at("y").get<double>();
+            viewport_->CenterOn(Vec2(x, y));
+
+            return json{
+                {"position", {
+                    {"x", viewport_->GetPosition().x},
+                    {"y", viewport_->GetPosition().y}
+                }},
+                {"zoom", viewport_->GetZoom()}
+            };
+        }
+        else if (method == "viewport.reset") {
+            if (!viewport_) {
+                throw std::runtime_error("No slide loaded");
+            }
+
+            viewport_->ResetView();
+
+            return json{
+                {"position", {
+                    {"x", viewport_->GetPosition().x},
+                    {"y", viewport_->GetPosition().y}
+                }},
+                {"zoom", viewport_->GetZoom()}
+            };
+        }
+
+        // Slide commands
+        else if (method == "slide.load") {
+            std::string path = params.at("path").get<std::string>();
+            LoadSlide(path);
+
+            if (!slideLoader_) {
+                throw std::runtime_error("Failed to load slide");
+            }
+
+            return json{
+                {"width", slideLoader_->GetWidth()},
+                {"height", slideLoader_->GetHeight()},
+                {"levels", slideLoader_->GetLevelCount()},
+                {"path", currentSlidePath_}
+            };
+        }
+        else if (method == "slide.info") {
+            if (!slideLoader_) {
+                throw std::runtime_error("No slide loaded");
+            }
+
+            json result = {
+                {"width", slideLoader_->GetWidth()},
+                {"height", slideLoader_->GetHeight()},
+                {"levels", slideLoader_->GetLevelCount()},
+                {"path", currentSlidePath_}
+            };
+
+            if (viewport_) {
+                result["viewport"] = {
+                    {"position", {
+                        {"x", viewport_->GetPosition().x},
+                        {"y", viewport_->GetPosition().y}
+                    }},
+                    {"zoom", viewport_->GetZoom()},
+                    {"window_width", windowWidth_},
+                    {"window_height", windowHeight_}
+                };
+            }
+
+            return result;
+        }
+
+        // Polygon commands
+        else if (method == "polygons.load") {
+            std::string path = params.at("path").get<std::string>();
+            LoadPolygons(path);
+
+            if (!polygonOverlay_) {
+                throw std::runtime_error("Failed to load polygons");
+            }
+
+            return json{
+                {"count", polygonOverlay_->GetPolygonCount()},
+                {"classes", polygonOverlay_->GetClassIds()}
+            };
+        }
+        else if (method == "polygons.set_visibility") {
+            if (!polygonOverlay_) {
+                throw std::runtime_error("No polygons loaded");
+            }
+
+            bool visible = params.at("visible").get<bool>();
+            polygonOverlay_->SetVisible(visible);
+
+            return json{{"visible", polygonOverlay_->IsVisible()}};
+        }
+        else if (method == "polygons.query") {
+            if (!polygonOverlay_) {
+                throw std::runtime_error("No polygons loaded");
+            }
+
+            double x = params.at("x").get<double>();
+            double y = params.at("y").get<double>();
+            double w = params.at("w").get<double>();
+            double h = params.at("h").get<double>();
+
+            // TODO: Implement polygon query in PolygonOverlay
+            // For now, return empty list
+            return json{{"polygons", json::array()}};
+        }
+
+        // Unknown method
+        throw std::runtime_error("Unknown method: " + method);
+
+    } catch (const json::exception& e) {
+        throw std::runtime_error(std::string("JSON error: ") + e.what());
     }
 }
 

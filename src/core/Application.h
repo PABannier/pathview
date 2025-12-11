@@ -12,6 +12,20 @@ class TextureManager;
 class PolygonOverlay;
 class AnnotationManager;
 
+// Forward declare IPC types
+namespace pathview {
+namespace ipc {
+    class IPCServer;
+}
+}
+
+#include "json.hpp"
+namespace pathview {
+namespace ipc {
+    using json = nlohmann::json;
+}
+}
+
 class Application {
 public:
     Application();
@@ -36,6 +50,9 @@ private:
     void LoadSlide(const std::string& path);
     void OpenPolygonFileDialog();
     void LoadPolygons(const std::string& path);
+
+    // IPC command handler
+    pathview::ipc::json HandleIPCCommand(const std::string& method, const pathview::ipc::json& params);
 
     // UI rendering methods
     void RenderMenuBar();
@@ -64,6 +81,9 @@ private:
     std::unique_ptr<Minimap> minimap_;
     std::unique_ptr<PolygonOverlay> polygonOverlay_;
     std::unique_ptr<AnnotationManager> annotationManager_;
+
+    // IPC server for remote control
+    std::unique_ptr<pathview::ipc::IPCServer> ipcServer_;
 
     // Preview texture (Phase 2 simple display)
     SDL_Texture* previewTexture_;

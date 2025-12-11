@@ -14,7 +14,10 @@
       "Bash(make:*)",
       "Bash(protoc:*)",
       "Bash(cat:*)",
-      "Bash(vcpkg integrate:*)"
+      "Bash(vcpkg integrate:*)",
+      "Bash(tree:*)",
+      "Bash(git submodule add:*)",
+      "Bash(git submodule:*)"
     ],
     "deny": [],
     "ask": []

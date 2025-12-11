@@ -125,6 +125,13 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     )
 endif()
 
+# Add API subdirectory (MCP server + IPC infrastructure)
+option(BUILD_MCP_SERVER "Build MCP server binary" ON)
+
+if(BUILD_MCP_SERVER)
+    add_subdirectory(src/api)
+endif()
+
 # Print configuration summary
 message(STATUS "=== PathView Configuration ===")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
@@ -134,4 +141,5 @@ message(STATUS "OpenSlide found: ${OPENSLIDE_FOUND}")
 message(STATUS "OpenSlide include: ${OPENSLIDE_INCLUDE_DIRS}")
 message(STATUS "OpenSlide library: ${OPENSLIDE_LIBRARIES}")
 message(STATUS "ImGui directory: ${IMGUI_DIR}")
+message(STATUS "Build MCP server: ${BUILD_MCP_SERVER}")
 message(STATUS "==============================")
