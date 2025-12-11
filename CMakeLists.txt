@@ -8,16 +8,20 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # Export compile commands for IDE support
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Add custom CMake modules path (for FindOpenSlide, FindSDL2_image, and FindNFD)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+
 # Find SDL2 via vcpkg
 find_package(SDL2 CONFIG REQUIRED)
-find_package(SDL2_image CONFIG REQUIRED)
-find_package(nfd CONFIG REQUIRED)
+
+# Find SDL2_image using custom module (vcpkg's CONFIG mode can be unreliable)
+find_package(SDL2_image REQUIRED)
+
+# Find NFD using custom module (vcpkg's CONFIG mode can be unreliable)
+find_package(NFD REQUIRED)
 
 # Find Protobuf (use system/Homebrew version to match generated files)
 find_package(Protobuf REQUIRED)
-
-# Find OpenSlide using custom module
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 find_package(OpenSlide REQUIRED)
 
 # ImGui sources (compiled directly, not via vcpkg)

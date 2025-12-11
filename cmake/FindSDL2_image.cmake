@@ -1,0 +1,73 @@
+# FindSDL2_image.cmake
+# Find SDL2_image library
+#
+# This module defines:
+#  SDL2_IMAGE_FOUND - whether SDL2_image was found
+#  SDL2_IMAGE_INCLUDE_DIRS - include directories for SDL2_image
+#  SDL2_IMAGE_LIBRARIES - libraries to link against SDL2_image
+#
+# This module also creates the following imported targets:
+#  SDL2_image::SDL2_image-static - Static library target
+
+# First try to find via vcpkg installed paths (relative to source dir)
+set(_VCPKG_INSTALLED_DIR "${CMAKE_SOURCE_DIR}/vcpkg_installed")
+
+# Determine vcpkg triplet
+if(APPLE)
+    if(CMAKE_OSX_ARCHITECTURES STREQUAL "x86_64" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+        set(_VCPKG_TRIPLET "x64-osx")
+    else()
+        set(_VCPKG_TRIPLET "arm64-osx")
+    endif()
+elseif(UNIX)
+    set(_VCPKG_TRIPLET "x64-linux")
+elseif(WIN32)
+    set(_VCPKG_TRIPLET "x64-windows")
+endif()
+
+# Search paths: vcpkg installed dir first, then system paths
+set(_SEARCH_PATHS
+    "${_VCPKG_INSTALLED_DIR}/${_VCPKG_TRIPLET}"
+    "${CMAKE_PREFIX_PATH}"
+    /opt/homebrew
+    /usr/local
+    /usr
+)
+
+# Find include directory
+find_path(SDL2_IMAGE_INCLUDE_DIR SDL_image.h
+    PATHS ${_SEARCH_PATHS}
+    PATH_SUFFIXES include include/SDL2 SDL2)
+
+# Find the library
+find_library(SDL2_IMAGE_LIBRARY
+    NAMES SDL2_image SDL2_image-static libSDL2_image
+    PATHS ${_SEARCH_PATHS}
+    PATH_SUFFIXES lib)
+
+# Handle the REQUIRED argument and set SDL2_IMAGE_FOUND
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(SDL2_image
+    REQUIRED_VARS SDL2_IMAGE_LIBRARY SDL2_IMAGE_INCLUDE_DIR)
+
+if(SDL2_IMAGE_FOUND)
+    set(SDL2_IMAGE_LIBRARIES ${SDL2_IMAGE_LIBRARY})
+    set(SDL2_IMAGE_INCLUDE_DIRS ${SDL2_IMAGE_INCLUDE_DIR})
+    
+    # Create imported target for compatibility with modern CMake usage
+    if(NOT TARGET SDL2_image::SDL2_image-static)
+        add_library(SDL2_image::SDL2_image-static STATIC IMPORTED)
+        set_target_properties(SDL2_image::SDL2_image-static PROPERTIES
+            IMPORTED_LOCATION "${SDL2_IMAGE_LIBRARY}"
+            INTERFACE_INCLUDE_DIRECTORIES "${SDL2_IMAGE_INCLUDE_DIR}"
+        )
+    endif()
+    
+    # Also create SDL2_image::SDL2_image as an alias for compatibility
+    if(NOT TARGET SDL2_image::SDL2_image)
+        add_library(SDL2_image::SDL2_image ALIAS SDL2_image::SDL2_image-static)
+    endif()
+    
+    mark_as_advanced(SDL2_IMAGE_INCLUDE_DIR SDL2_IMAGE_LIBRARY)
+endif()
+

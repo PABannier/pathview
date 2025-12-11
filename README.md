@@ -61,10 +61,10 @@ export VCPKG_DEFAULT_TRIPLET=arm64-osx
 # export VCPKG_DEFAULT_TRIPLET=x64-linux
 
 # Install SDL2 via vcpkg (if using homebrew vcpkg)
-vcpkg install sdl2 sdl2-image
+vcpkg install
 
 # Or if using vcpkg from source
-~/vcpkg/vcpkg install sdl2 sdl2-image
+~/vcpkg/vcpkg install
 ```
 
 ### 2. Configure with CMake
@@ -119,7 +119,9 @@ pathview/
 ├── CMakeLists.txt           # Build configuration
 ├── vcpkg.json               # Dependency manifest
 ├── cmake/
-│   └── FindOpenSlide.cmake  # Custom OpenSlide find module
+│   ├── FindOpenSlide.cmake  # Custom OpenSlide find module
+│   ├── FindSDL2_image.cmake # Custom SDL2_image find module
+│   └── FindNFD.cmake        # Custom NFD (native file dialog) find module
 ├── src/
 │   ├── main.cpp             # Entry point
 │   ├── Application.{h,cpp}  # Main app controller
@@ -190,6 +192,60 @@ Verify vcpkg installation:
 ```
 
 Ensure the correct triplet is set for your architecture.
+
+### SDL2_image Not Found
+
+The project uses a custom `FindSDL2_image.cmake` module to locate SDL2_image because vcpkg's CMake config files can be unreliable across platforms.
+
+First, verify SDL2_image is installed:
+
+```bash
+# Check vcpkg installation
+~/vcpkg/vcpkg list | grep sdl2-image
+
+# Check if library exists in vcpkg_installed directory
+ls vcpkg_installed/*/lib/libSDL2_image*
+```
+
+If the library is installed but not found, ensure you've run `vcpkg install` with the correct triplet:
+
+```bash
+# macOS Apple Silicon
+export VCPKG_DEFAULT_TRIPLET=arm64-osx
+vcpkg install
+
+# macOS Intel
+export VCPKG_DEFAULT_TRIPLET=x64-osx
+vcpkg install
+
+# Linux
+export VCPKG_DEFAULT_TRIPLET=x64-linux
+vcpkg install
+```
+
+The custom find module (`cmake/FindSDL2_image.cmake`) searches in:
+1. `vcpkg_installed/<triplet>/` directory (project-local)
+2. System paths (`/opt/homebrew`, `/usr/local`, `/usr`)
+
+### NFD (Native File Dialog) Not Found
+
+Similar to SDL2_image, the project uses a custom `FindNFD.cmake` module to locate nativefiledialog-extended.
+
+Verify installation:
+
+```bash
+# Check vcpkg installation
+~/vcpkg/vcpkg list | grep nativefiledialog
+
+# Check if library exists
+ls vcpkg_installed/*/lib/libnfd*
+```
+
+The custom find module (`cmake/FindNFD.cmake`) searches in:
+1. `vcpkg_installed/<triplet>/` directory (project-local)
+2. System paths (`/opt/homebrew`, `/usr/local`, `/usr`)
+
+**Note**: On macOS, NFD requires the AppKit and UniformTypeIdentifiers frameworks. On Linux, it requires GTK3 (which the find module automatically detects via pkg-config).
 
 ### ImGui Errors
 
