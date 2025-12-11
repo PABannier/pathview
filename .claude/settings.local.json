@@ -12,7 +12,9 @@
       "Bash(sdl2-config:*)",
       "Bash(vcpkg install:*)",
       "Bash(make:*)",
-      "Bash(protoc:*)"
+      "Bash(protoc:*)",
+      "Bash(cat:*)",
+      "Bash(vcpkg integrate:*)"
     ],
     "deny": [],
     "ask": []
