@@ -17,7 +17,10 @@
       "Bash(vcpkg integrate:*)",
       "Bash(tree:*)",
       "Bash(git submodule add:*)",
-      "Bash(git submodule:*)"
+      "Bash(git submodule:*)",
+      "Bash(git checkout:*)",
+      "Bash(file:*)",
+      "Bash(unzip:*)"
     ],
     "deny": [],
     "ask": []

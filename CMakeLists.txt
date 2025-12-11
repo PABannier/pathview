@@ -11,6 +11,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Add custom CMake modules path (for FindOpenSlide, FindSDL2_image, and FindNFD)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
+# Resource directory for fonts and icons
+set(RESOURCES_DIR "${CMAKE_SOURCE_DIR}/resources")
+
 # Find SDL2 via vcpkg
 find_package(SDL2 CONFIG REQUIRED)
 
@@ -52,6 +55,7 @@ set(IMGUI_SOURCES
 set(APP_SOURCES
     src/core/main.cpp
     src/core/Application.cpp
+    src/core/UIStyle.cpp
     src/core/SlideLoader.cpp
     src/core/Viewport.cpp
     src/core/TileCache.cpp
@@ -73,10 +77,16 @@ add_executable(pathview ${APP_SOURCES} ${IMGUI_SOURCES})
 target_include_directories(pathview PRIVATE
     ${CMAKE_SOURCE_DIR}/src/core
     ${CMAKE_SOURCE_DIR}/protobuf
+    ${CMAKE_SOURCE_DIR}/resources/fonts
     ${IMGUI_DIR}
     ${IMGUI_DIR}/backends
     ${OPENSLIDE_INCLUDE_DIRS}
     ${Protobuf_INCLUDE_DIRS}
+)
+
+# Add compile definitions for resource paths
+target_compile_definitions(pathview PRIVATE
+    RESOURCES_DIR="${RESOURCES_DIR}"
 )
 
 # Link libraries

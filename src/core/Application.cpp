@@ -6,11 +6,14 @@
 #include "Minimap.h"
 #include "PolygonOverlay.h"
 #include "AnnotationManager.h"
+#include "UIStyle.h"
 #include "../api/ipc/IPCServer.h"
 #include "../api/ipc/IPCMessage.h"
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_sdlrenderer2.h"
+#include "IconsFontAwesome6.h"
 #include <nfd.hpp>
 #include <iostream>
 
@@ -23,6 +26,7 @@ Application::Application()
     , lastMouseY_(0)
     , windowWidth_(1280)
     , windowHeight_(720)
+    , dpiScale_(1.0f)
     , previewTexture_(nullptr)
     , sidebarVisible_(true)
 {
@@ -39,14 +43,13 @@ bool Application::Initialize() {
         return false;
     }
 
-    // Create window
     window_ = SDL_CreateWindow(
         "PathView - Digital Pathology Viewer",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
         windowWidth_,
         windowHeight_,
-        SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE
+        SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI
     );
 
     if (!window_) {
@@ -61,14 +64,57 @@ bool Application::Initialize() {
         return false;
     }
 
+    // Calculate DPI scale factor for high-DPI displays (Retina, etc.)
+    // Compare the actual drawable size (in pixels) to the logical window size
+    int drawableWidth, drawableHeight;
+    SDL_GetRendererOutputSize(renderer_, &drawableWidth, &drawableHeight);
+    dpiScale_ = static_cast<float>(drawableWidth) / static_cast<float>(windowWidth_);
+    std::cout << "DPI Scale: " << dpiScale_ << " (drawable: " << drawableWidth << "x" << drawableHeight
+              << ", window: " << windowWidth_ << "x" << windowHeight_ << ")" << std::endl;
+
+    // Set render scale for high-DPI support
+    // This makes SDL scale all rendering operations from logical to native resolution
+    // Combined with fonts loaded at native resolution, this gives crisp text
+    SDL_RenderSetScale(renderer_, dpiScale_, dpiScale_);
+
     // Initialize ImGui
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
-    // Setup ImGui style
-    ImGui::StyleColorsDark();
+    std::string fontPath = std::string(RESOURCES_DIR) + "/fonts/";
+    ImFontConfig config;
+    config.OversampleH = 2;
+    config.OversampleV = 2;
+
+    // Base font sizes (will be scaled by DPI)
+    const float baseFontSize = 15.0f;
+    const float iconFontSize = 13.0f;
+    const float mediumFontSize = 16.0f;
+
+    // Load Inter Regular with DPI scaling
+    fontRegular_ = io.Fonts->AddFontFromFileTTF(
+        (fontPath + "Inter-Regular.ttf").c_str(), baseFontSize * dpiScale_, &config);
+
+    // Merge Font Awesome icons into the same font
+    static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+    ImFontConfig icons_config;
+    icons_config.MergeMode = true;
+    icons_config.PixelSnapH = true;
+    icons_config.GlyphMinAdvanceX = iconFontSize * dpiScale_;
+    io.Fonts->AddFontFromFileTTF(
+        (fontPath + "FontAwesome6-Solid.ttf").c_str(), iconFontSize * dpiScale_,
+        &icons_config, icons_ranges);
+
+    fontMedium_ = io.Fonts->AddFontFromFileTTF(
+        (fontPath + "Inter-Medium.ttf").c_str(), mediumFontSize * dpiScale_, &config);
+
+    // Set font global scale to compensate (ImGui works in logical coordinates)
+    // This makes fonts render at native resolution but display at correct logical size
+    io.FontGlobalScale = 1.0f / dpiScale_;
+
+    UIStyle::ApplyStyle();
 
     // Initialize ImGui backends
     if (!ImGui_ImplSDL2_InitForSDLRenderer(window_, renderer_)) {
@@ -304,7 +350,7 @@ void Application::Render() {
 
     // Render minimap overlay
     if (slideLoader_ && viewport_ && minimap_) {
-        minimap_->Render(*viewport_, sidebarVisible_, SIDEBAR_WIDTH);
+        minimap_->Render(*viewport_, false, 0);
     }
 
     // Render ImGui
@@ -497,7 +543,6 @@ void Application::RenderMenuBar() {
             if (ImGui::MenuItem("Reset View", "R") && viewport_) {
                 viewport_->ResetView();
             }
-            ImGui::MenuItem("Toggle Sidebar", nullptr, &sidebarVisible_);
             ImGui::EndMenu();
         }
 

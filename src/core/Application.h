@@ -11,6 +11,7 @@ class Viewport;
 class TextureManager;
 class PolygonOverlay;
 class AnnotationManager;
+struct ImFont;
 
 // Forward declare IPC types
 namespace pathview {
@@ -65,6 +66,10 @@ private:
     SDL_Window* window_;
     SDL_Renderer* renderer_;
 
+    // Font handles
+    ImFont* fontRegular_;   // Inter 15px with FA merged
+    ImFont* fontMedium_;    // Inter 16px for emphasis
+
     // Application state
     bool running_;
     bool isPanning_;
@@ -72,6 +77,7 @@ private:
     int lastMouseY_;
     int windowWidth_;
     int windowHeight_;
+    float dpiScale_;  // High-DPI scale factor (drawable size / window size)
 
     // Components
     std::unique_ptr<TextureManager> textureManager_;
