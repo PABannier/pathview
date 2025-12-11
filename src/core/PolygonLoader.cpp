@@ -31,6 +31,8 @@ bool PolygonLoader::Load(const std::string& filepath,
     outPolygons.clear();
     outClassColors.clear();
 
+    int maxDeepZoomLevel = static_cast<int>(slideData.max_level());
+
     // First pass: collect unique cell types
     std::set<std::string> uniqueCellTypes;
     int totalMasks = 0;
@@ -74,6 +76,8 @@ bool PolygonLoader::Load(const std::string& filepath,
                 continue;
             }
 
+            double scaleFactor = std::pow(2, maxDeepZoomLevel - tile.level());
+
             Polygon polygon;
             polygon.classId = classMapping[mask.cell_type()];
 
@@ -82,8 +86,8 @@ bool PolygonLoader::Load(const std::string& filepath,
             for (int k = 0; k < mask.coordinates_size(); ++k) {
                 const auto& point = mask.coordinates(k);
                 polygon.vertices.emplace_back(
-                    static_cast<double>((point.x() + tile.x() * tile.width()) * 2),
-                    static_cast<double>((point.y() + tile.y() * tile.height()) * 2)
+                    static_cast<double>((point.x() + tile.x() * tile.width()) * scaleFactor),
+                    static_cast<double>((point.y() + tile.y() * tile.height()) * scaleFactor)
                 );
             }
 
