@@ -1,5 +1,5 @@
 #include "PolygonLoader.h"
-#include "cell_polygons.pb.h"  // Protobuf generated header
+#include "cell_polygons.pb.h"
 #include <fstream>
 #include <iostream>
 #include <set>
