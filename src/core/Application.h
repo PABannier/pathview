@@ -79,6 +79,10 @@ private:
     int windowHeight_;
     float dpiScale_;  // High-DPI scale factor (drawable size / window size)
 
+    // Frame timing for animations
+    uint32_t lastFrameTime_;
+    double deltaTime_;
+
     // Components
     std::unique_ptr<TextureManager> textureManager_;
     std::unique_ptr<SlideLoader> slideLoader_;

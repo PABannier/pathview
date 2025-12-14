@@ -485,6 +485,35 @@ class TestSuite:
             duration = time.time() - start
             self.tracker.record_test(name, 'FAIL', str(e), duration)
 
+    def _sample_viewport_over_time(self, operation_func, samples=4, interval_ms=100):
+        """
+        Execute operation and sample viewport state over time.
+
+        Args:
+            operation_func: Function that triggers viewport operation
+            samples: Number of samples to take
+            interval_ms: Milliseconds between samples
+
+        Returns:
+            List of (time_ms, position, zoom) tuples
+        """
+        results = []
+        start = time.time()
+        operation_func()
+
+        for i in range(samples):
+            time.sleep(interval_ms / 1000.0)
+            info = self.client.call_tool('get_slide_info')
+            elapsed_ms = (time.time() - start) * 1000
+
+            results.append((
+                elapsed_ms,
+                (info['viewport']['position']['x'], info['viewport']['position']['y']),
+                info['viewport']['zoom']
+            ))
+
+        return results
+
     def _test_http_endpoints(self):
         """Test HTTP endpoints"""
         def test_health():
@@ -606,17 +635,54 @@ class TestSuite:
             self._validate_viewport_response(result, "Reset view again")
             return "Reset successful"
 
+        def test_animation_smoothness():
+            """Verify viewport animations are smooth and progressive"""
+            # Reset to known state and zoom in to have room to pan
+            self.client.call_tool('reset_view')
+            time.sleep(0.6)  # Wait for reset animation
+
+            # Zoom in significantly to have room to pan
+            self.client.call_tool('zoom', {'delta': 5.0})
+            time.sleep(0.4)  # Wait for zoom animation
+
+            # Now pan and sample positions
+            samples = self._sample_viewport_over_time(
+                lambda: self.client.call_tool('pan', {'dx': 5000, 'dy': 0}),
+                samples=4,
+                interval_ms=75
+            )
+
+            # Verify progressive movement
+            positions = [s[1][0] for s in samples]
+
+            if len(set(positions)) < 3:
+                raise Exception(f"Animation not smooth - positions: {positions}")
+
+            # Verify monotonic increase (panning right)
+            if not all(positions[i] < positions[i+1] for i in range(len(positions)-1)):
+                raise Exception(f"Animation not monotonic: {positions}")
+
+            # Verify reasonable timing
+            if samples[0][0] < 50:
+                raise Exception(f"Animation too fast: {samples[0][0]}ms")
+
+            if samples[-1][0] > 500:
+                raise Exception(f"Animation too slow: {samples[-1][0]}ms")
+
+            return f"Smooth animation verified ({len(set(positions))} unique positions)"
+
         # Run viewport tests
-        self._run_test(4, 16, "Reset view", test_reset)
-        self._run_test(5, 16, "Zoom in (2x)", test_zoom_in)
-        self._run_test(6, 16, "Zoom out (0.5x)", test_zoom_out)
-        self._run_test(7, 16, "Pan right", test_pan_right)
-        self._run_test(8, 16, "Pan down", test_pan_down)
-        self._run_test(9, 16, "Center on middle", test_center_middle)
-        self._run_test(10, 16, "Center on top-left quadrant", test_center_quadrant1)
-        self._run_test(11, 16, "Center on bottom-right quadrant", test_center_quadrant2)
-        self._run_test(12, 16, "Zoom at screen point", test_zoom_at_point)
-        self._run_test(13, 16, "Reset view again", test_reset_again)
+        self._run_test(4, 17, "Reset view", test_reset)
+        self._run_test(5, 17, "Zoom in (2x)", test_zoom_in)
+        self._run_test(6, 17, "Zoom out (0.5x)", test_zoom_out)
+        self._run_test(7, 17, "Pan right", test_pan_right)
+        self._run_test(8, 17, "Pan down", test_pan_down)
+        self._run_test(9, 17, "Center on middle", test_center_middle)
+        self._run_test(10, 17, "Center on top-left quadrant", test_center_quadrant1)
+        self._run_test(11, 17, "Center on bottom-right quadrant", test_center_quadrant2)
+        self._run_test(12, 17, "Zoom at screen point", test_zoom_at_point)
+        self._run_test(13, 17, "Reset view again", test_reset_again)
+        self._run_test(14, 17, "Verify animation smoothness", test_animation_smoothness)
 
     def _test_polygon_operations(self):
         """Test polygon loading and control"""

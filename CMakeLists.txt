@@ -58,6 +58,7 @@ set(APP_SOURCES
     src/core/UIStyle.cpp
     src/core/SlideLoader.cpp
     src/core/Viewport.cpp
+    src/core/Animation.cpp
     src/core/TileCache.cpp
     src/core/SlideRenderer.cpp
     src/core/TextureManager.cpp

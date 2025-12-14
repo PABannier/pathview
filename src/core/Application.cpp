@@ -14,6 +14,7 @@
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_sdlrenderer2.h"
 #include "IconsFontAwesome6.h"
+#include <SDL_timer.h>
 #include <nfd.hpp>
 #include <iostream>
 
@@ -154,7 +155,19 @@ bool Application::Initialize() {
 }
 
 void Application::Run() {
+    lastFrameTime_ = SDL_GetTicks();
+
     while (running_) {
+        // Calculate delta time
+        uint32_t currentTime = SDL_GetTicks();
+        deltaTime_ = (currentTime - lastFrameTime_) / 1000.0;
+        lastFrameTime_ = currentTime;
+
+        // Cap delta time to prevent huge jumps
+        if (deltaTime_ > 0.1) {
+            deltaTime_ = 0.1;
+        }
+
         ProcessEvents();
         Update();
         Render();
@@ -308,7 +321,11 @@ void Application::ProcessEvents() {
 }
 
 void Application::Update() {
-    // Update logic will be added in later phases
+    // Update viewport animation
+    if (viewport_) {
+        double currentTimeMs = static_cast<double>(SDL_GetTicks());
+        viewport_->UpdateAnimation(currentTimeMs);
+    }
 }
 
 void Application::Render() {
@@ -760,7 +777,7 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
 
             double dx = params.at("dx").get<double>();
             double dy = params.at("dy").get<double>();
-            viewport_->Pan(Vec2(dx, dy));
+            viewport_->Pan(Vec2(dx, dy), AnimationMode::SMOOTH);
 
             Vec2 pos = viewport_->GetPosition();
             return json{
@@ -777,7 +794,7 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
 
             // Zoom at center of viewport
             Vec2 center(windowWidth_ / 2.0, windowHeight_ / 2.0);
-            viewport_->ZoomAtPoint(center, delta);
+            viewport_->ZoomAtPoint(center, delta, AnimationMode::SMOOTH);
 
             return json{
                 {"zoom", viewport_->GetZoom()},
@@ -796,7 +813,7 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
             int screenY = params.at("screen_y").get<int>();
             double delta = params.at("delta").get<double>();
 
-            viewport_->ZoomAtPoint(Vec2(screenX, screenY), delta);
+            viewport_->ZoomAtPoint(Vec2(screenX, screenY), delta, AnimationMode::SMOOTH);
 
             return json{
                 {"zoom", viewport_->GetZoom()},
@@ -813,7 +830,7 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
 
             double x = params.at("x").get<double>();
             double y = params.at("y").get<double>();
-            viewport_->CenterOn(Vec2(x, y));
+            viewport_->CenterOn(Vec2(x, y), AnimationMode::SMOOTH);
 
             return json{
                 {"position", {
@@ -828,7 +845,7 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
                 throw std::runtime_error("No slide loaded");
             }
 
-            viewport_->ResetView();
+            viewport_->ResetView(AnimationMode::SMOOTH);
 
             return json{
                 {"position", {

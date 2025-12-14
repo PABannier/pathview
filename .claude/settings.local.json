@@ -23,7 +23,8 @@
       "Bash(unzip:*)",
       "Bash(curl:*)",
       "Bash(chmod:*)",
-      "Bash(./run_mcp_tests.sh:*)"
+      "Bash(./run_mcp_tests.sh:*)",
+      "Bash(pkill:*)"
     ],
     "deny": [],
     "ask": []

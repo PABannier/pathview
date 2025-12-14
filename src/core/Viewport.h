@@ -2,19 +2,7 @@
 
 #include <cstdint>
 #include <algorithm>
-
-struct Vec2 {
-    double x;
-    double y;
-
-    Vec2() : x(0.0), y(0.0) {}
-    Vec2(double x_, double y_) : x(x_), y(y_) {}
-
-    Vec2 operator+(const Vec2& other) const { return Vec2(x + other.x, y + other.y); }
-    Vec2 operator-(const Vec2& other) const { return Vec2(x - other.x, y - other.y); }
-    Vec2 operator*(double s) const { return Vec2(x * s, y * s); }
-    Vec2 operator/(double s) const { return Vec2(x / s, y / s); }
-};
+#include "Animation.h"  // Provides Vec2 and AnimationMode
 
 struct Rect {
     double x, y, width, height;
@@ -53,10 +41,16 @@ public:
     int64_t GetSlideHeight() const { return slideHeight_; }
 
     // Camera control
-    void ZoomAtPoint(Vec2 screenPoint, double zoomDelta);
-    void Pan(Vec2 deltaInSlideCoords);
-    void CenterOn(Vec2 slidePoint);
-    void ResetView();
+    void ZoomAtPoint(Vec2 screenPoint, double zoomDelta,
+                     AnimationMode mode = AnimationMode::INSTANT);
+    void Pan(Vec2 deltaInSlideCoords,
+             AnimationMode mode = AnimationMode::INSTANT);
+    void CenterOn(Vec2 slidePoint,
+                  AnimationMode mode = AnimationMode::INSTANT);
+    void ResetView(AnimationMode mode = AnimationMode::INSTANT);
+
+    // Animation update (called each frame)
+    void UpdateAnimation(double currentTimeMs);
 
     // Coordinate transformations
     Vec2 ScreenToSlide(Vec2 screenPos) const;
@@ -90,4 +84,7 @@ private:
     // Zoom limits
     double minZoom_;  // Entire slide fits in window
     double maxZoom_;  // Maximum zoom (e.g., 4x or 1:1 pixel)
+
+    // Animation state
+    Animation animation_;
 };
