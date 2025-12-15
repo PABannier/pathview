@@ -10,6 +10,16 @@ cmake-build-*/
 *.swo
 *~
 
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+*.pywz
+*.pyzw
+
 # CMake generated files
 CMakeCache.txt
 CMakeFiles/
