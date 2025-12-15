@@ -24,7 +24,8 @@ class MCPServer {
 public:
     MCPServer(ipc::IPCClient* ipcClient,
               http::SnapshotManager* snapshotManager,
-              http::HTTPServer* httpServer);
+              http::HTTPServer* httpServer,
+              int mcpPort = 9000);
     ~MCPServer();
 
     // Delete copy constructor and assignment

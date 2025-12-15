@@ -11,16 +11,16 @@ namespace mcp {
 
 MCPServer::MCPServer(ipc::IPCClient* ipcClient,
                      http::SnapshotManager* snapshotManager,
-                     http::HTTPServer* httpServer)
+                     http::HTTPServer* httpServer,
+                     int mcpPort)
     : ipcClient_(ipcClient)
     , snapshotManager_(snapshotManager)
     , httpServer_(httpServer)
 {
     // Initialize MCP server with HTTP+SSE transport
-    // Default configuration: localhost:9000
     ::mcp::server::configuration config;
     config.host = "127.0.0.1";
-    config.port = 9000;
+    config.port = mcpPort;
     config.sse_endpoint = "/sse";
 
     server_ = std::make_unique<::mcp::server>(config);
@@ -120,7 +120,34 @@ void MCPServer::RegisterTools() {
         .build();
     server_->register_tool(set_polygon_visibility, tools::HandleSetPolygonVisibility);
 
-    std::cout << "Registered " << 11 << " MCP tools" << std::endl;
+    // Session management tools
+    ::mcp::tool agent_hello = ::mcp::tool_builder("agent_hello")
+        .with_description("Register agent identity and get session info")
+        .with_string_param("agent_name", "Name/identifier of the AI agent")
+        .with_string_param("agent_version", "Version of the AI agent (optional)", false)
+        .build();
+    server_->register_tool(agent_hello, tools::HandleAgentHello);
+
+    // Navigation lock tools
+    ::mcp::tool nav_lock = ::mcp::tool_builder("nav_lock")
+        .with_description("Acquire navigation lock to prevent user input")
+        .with_string_param("owner_uuid", "UUID of lock owner (agent)")
+        .with_number_param("ttl_seconds", "Lock time-to-live in seconds (default 300)", false)
+        .build();
+    server_->register_tool(nav_lock, tools::HandleNavLock);
+
+    ::mcp::tool nav_unlock = ::mcp::tool_builder("nav_unlock")
+        .with_description("Release navigation lock")
+        .with_string_param("owner_uuid", "UUID of lock owner (agent)")
+        .build();
+    server_->register_tool(nav_unlock, tools::HandleNavUnlock);
+
+    ::mcp::tool nav_lock_status = ::mcp::tool_builder("nav_lock_status")
+        .with_description("Check navigation lock status")
+        .build();
+    server_->register_tool(nav_lock_status, tools::HandleNavLockStatus);
+
+    std::cout << "Registered " << 15 << " MCP tools" << std::endl;
 }
 
 void MCPServer::Run() {

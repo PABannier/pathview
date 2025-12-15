@@ -113,7 +113,7 @@ int main(int argc, char** argv) {
 
     // 5. Create and configure MCP server
     std::cout << "Initializing MCP server..." << std::endl;
-    pathview::mcp::MCPServer mcpServer(&ipcClient, &snapshotManager, &httpServer);
+    pathview::mcp::MCPServer mcpServer(&ipcClient, &snapshotManager, &httpServer, mcpPort);
     g_mcpServer = &mcpServer;
     mcpServer.RegisterTools();
 

@@ -15,6 +15,12 @@ namespace ipc {
 using CommandHandler = std::function<json(const std::string& method, const json& params)>;
 
 /**
+ * Disconnect callback function type
+ * Called when a client disconnects
+ */
+using DisconnectCallback = std::function<void(int clientFd)>;
+
+/**
  * Unix domain socket server for IPC
  * Non-blocking, integrates with GUI event loop
  */
@@ -58,6 +64,18 @@ public:
      */
     std::string GetSocketPath() const { return socketPath_; }
 
+    /**
+     * Set callback for client disconnections
+     */
+    void SetDisconnectCallback(DisconnectCallback callback) {
+        disconnectCallback_ = callback;
+    }
+
+    /**
+     * Get client FD for current request (called during HandleRequest)
+     */
+    int GetCurrentClientFd() const { return currentClientFd_; }
+
 private:
     void AcceptConnections();
     void HandleClient(int clientFd);
@@ -68,6 +86,8 @@ private:
     int serverFd_;
     std::string socketPath_;
     std::vector<int> clients_;
+    DisconnectCallback disconnectCallback_;
+    int currentClientFd_;  // Set during HandleRequest
 
     static constexpr int MAX_CLIENTS = 5;
     static constexpr int BUFFER_SIZE = 65536;  // 64KB buffer for messages

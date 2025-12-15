@@ -55,6 +55,7 @@ target_link_libraries(pathview-mcp PRIVATE
     pathview_ipc
     mcp
     pthread
+    ${UUID_LIBRARY}
 )
 
 # Place pathview-mcp at the root of the build folder (same level as pathview)

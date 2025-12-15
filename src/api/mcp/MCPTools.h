@@ -47,6 +47,14 @@ void Initialize(ipc::IPCClient* ipcClient,
 ::mcp::json HandleQueryPolygons(const ::mcp::json& params, const std::string& sessionId);
 ::mcp::json HandleSetPolygonVisibility(const ::mcp::json& params, const std::string& sessionId);
 
+// Session management tools
+::mcp::json HandleAgentHello(const ::mcp::json& params, const std::string& sessionId);
+
+// Navigation lock tools
+::mcp::json HandleNavLock(const ::mcp::json& params, const std::string& sessionId);
+::mcp::json HandleNavUnlock(const ::mcp::json& params, const std::string& sessionId);
+::mcp::json HandleNavLockStatus(const ::mcp::json& params, const std::string& sessionId);
+
 } // namespace tools
 } // namespace mcp
 } // namespace pathview

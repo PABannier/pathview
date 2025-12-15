@@ -14,6 +14,7 @@ namespace ipc {
 IPCServer::IPCServer(CommandHandler handler)
     : handler_(std::move(handler))
     , serverFd_(-1)
+    , currentClientFd_(-1)
 {
 }
 
@@ -187,8 +188,14 @@ void IPCServer::HandleClient(int clientFd) {
         json requestJson = json::parse(buffer);
         IPCRequest request = IPCRequest::FromJson(requestJson);
 
+        // Set current client FD for handler
+        currentClientFd_ = clientFd;
+
         // Handle request
         IPCResponse response = HandleRequest(request);
+
+        // Clear current client FD
+        currentClientFd_ = -1;
 
         // Send response
         std::string responseStr = response.ToJson().dump();
@@ -220,6 +227,10 @@ void IPCServer::HandleClient(int clientFd) {
 void IPCServer::RemoveClient(int clientFd) {
     close(clientFd);
     clients_.erase(std::remove(clients_.begin(), clients_.end(), clientFd), clients_.end());
+
+    if (disconnectCallback_) {
+        disconnectCallback_(clientFd);
+    }
 }
 
 IPCResponse IPCServer::HandleRequest(const IPCRequest& request) {

@@ -135,6 +135,48 @@ static ::mcp::json SendIPCRequest(const std::string& method, const ::mcp::json& 
     return SendIPCRequest("polygons.set_visibility", params);
 }
 
+::mcp::json HandleAgentHello(const ::mcp::json& params, const std::string& sessionId) {
+    // Extract agent identity
+    std::string agentName = params.value("agent_name", "");
+    std::string agentVersion = params.value("agent_version", "");
+
+    if (agentName.empty()) {
+        throw ::mcp::mcp_exception(::mcp::error_code::invalid_params,
+                                    "Missing 'agent_name' parameter");
+    }
+
+    // Get session info from IPC (includes lock status)
+    ::mcp::json sessionParams = {
+        {"agent_name", agentName},
+        {"agent_version", agentVersion},
+        {"session_id", sessionId}
+    };
+
+    return SendIPCRequest("session.hello", sessionParams);
+}
+
+::mcp::json HandleNavLock(const ::mcp::json& params, const std::string&) {
+    if (!params.contains("owner_uuid")) {
+        throw ::mcp::mcp_exception(::mcp::error_code::invalid_params,
+                                    "Missing 'owner_uuid' parameter");
+    }
+
+    return SendIPCRequest("nav.lock", params);
+}
+
+::mcp::json HandleNavUnlock(const ::mcp::json& params, const std::string&) {
+    if (!params.contains("owner_uuid")) {
+        throw ::mcp::mcp_exception(::mcp::error_code::invalid_params,
+                                    "Missing 'owner_uuid' parameter");
+    }
+
+    return SendIPCRequest("nav.unlock", params);
+}
+
+::mcp::json HandleNavLockStatus(const ::mcp::json&, const std::string&) {
+    return SendIPCRequest("nav.lock_status", ::mcp::json::object());
+}
+
 } // namespace tools
 } // namespace mcp
 } // namespace pathview

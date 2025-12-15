@@ -27,6 +27,16 @@ find_package(NFD REQUIRED)
 find_package(Protobuf REQUIRED)
 find_package(OpenSlide REQUIRED)
 
+# Find UUID library
+if(APPLE)
+    # macOS has UUID in System framework
+    find_library(UUID_LIBRARY System REQUIRED)
+else()
+    # Linux uses libuuid
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(UUID REQUIRED uuid)
+endif()
+
 # Find Abseil (required by modern protobuf for logging)
 find_package(absl CONFIG REQUIRED)
 
@@ -101,6 +111,7 @@ target_link_libraries(pathview PRIVATE
     absl::log_internal_check_op
     absl::log_internal_message
     absl::hash
+    ${UUID_LIBRARY}
 )
 
 # Platform-specific settings

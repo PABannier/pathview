@@ -41,6 +41,28 @@ Application::~Application() {
     Shutdown();
 }
 
+bool Application::IsNavigationLocked() const {
+    return navLock_.isLocked && !navLock_.IsExpired();
+}
+
+void Application::CheckLockExpiry() {
+    if (navLock_.isLocked && navLock_.IsExpired()) {
+        std::cout << "Navigation lock expired for owner: "
+                  << navLock_.ownerUUID << std::endl;
+        navLock_ = NavigationLock();  // Reset to unlocked
+    }
+}
+
+std::string Application::GenerateUUID() const {
+    uuid_t uuid;
+    uuid_generate_random(uuid);
+
+    char uuid_str[37];
+    uuid_unparse_lower(uuid, uuid_str);
+
+    return std::string(uuid_str);
+}
+
 bool Application::Initialize() {
     // Initialize SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -151,6 +173,15 @@ bool Application::Initialize() {
     if (!ipcServer_->Start()) {
         std::cerr << "Warning: Failed to start IPC server (non-fatal)" << std::endl;
         // Non-fatal - GUI works without IPC
+    } else {
+        // Set disconnect callback for lock auto-release
+        ipcServer_->SetDisconnectCallback([this](int clientFd) {
+            if (navLock_.isLocked && navLock_.clientFd == clientFd) {
+                std::cout << "IPC client disconnected, releasing navigation lock for owner: "
+                          << navLock_.ownerUUID << std::endl;
+                navLock_ = NavigationLock();
+            }
+        });
     }
 
     std::cout << "PathView initialized successfully" << std::endl;
@@ -244,6 +275,20 @@ void Application::ProcessEvents() {
             }
         }
         else if (event.type == SDL_KEYDOWN) {
+            // Check navigation lock FIRST
+            if (IsNavigationLocked()) {
+                // Block ALL navigation shortcuts when locked
+                // Only allow quit shortcuts (handled separately)
+                const SDL_Keymod mods = SDL_GetModState();
+                bool shortcutMod = (mods & (KMOD_CTRL | KMOD_GUI)) != 0;
+
+                // Still allow Cmd/Ctrl+Q to quit
+                if (shortcutMod && event.key.keysym.sym == SDLK_q) {
+                    running_ = false;
+                }
+                continue;  // Skip all other keyboard input
+            }
+
             // Handle annotation tool keyboard shortcuts
             if (annotationManager_) {
                 annotationManager_->HandleKeyPress(event.key.keysym.sym, polygonOverlay_.get());
@@ -281,14 +326,20 @@ void Application::ProcessEvents() {
         ImGuiIO& io = ImGui::GetIO();
 
         if (!io.WantCaptureMouse) {
+            // Check navigation lock before processing mouse input
+            if (IsNavigationLocked()) {
+                // Block ALL mouse navigation when locked
+                continue;  // Skip mouse input
+            }
+
             // Handle annotation tool mouse clicks
             if (annotationManager_ && annotationManager_->IsToolActive() &&
                 event.type == SDL_MOUSEBUTTONDOWN) {
                 if (event.button.button == SDL_BUTTON_LEFT && viewport_) {
                     annotationManager_->HandleClick(event.button.x, event.button.y,
-                                                   event.button.clicks == 2,
-                                                   *viewport_, minimap_.get(),
-                                                   polygonOverlay_.get());
+                                                    event.button.clicks == 2,
+                                                    *viewport_, minimap_.get(),
+                                                    polygonOverlay_.get());
                     continue;  // Don't process panning
                 }
             }
@@ -340,6 +391,9 @@ void Application::ProcessEvents() {
             annotationManager_->UpdateMousePosition(viewport_->ScreenToSlide(Vec2(mouseX, mouseY)));
         }
     }
+
+    // Check if navigation lock has expired
+    CheckLockExpiry();
 
     // Process IPC messages (non-blocking, max 10ms per frame for 60 FPS)
     if (ipcServer_) {
@@ -410,6 +464,11 @@ void Application::RenderUI() {
     RenderToolbar();
     RenderSidebar();
     RenderWelcomeOverlay();
+
+    // Render navigation lock indicator (overlay)
+    if (IsNavigationLocked()) {
+        RenderNavigationLockIndicator();
+    }
 }
 
 void Application::OpenFileDialog() {
@@ -567,6 +626,36 @@ void Application::RenderSlidePreview() {
 
     // Render the texture
     SDL_RenderCopy(renderer_, previewTexture_, nullptr, &dstRect);
+}
+
+void Application::RenderNavigationLockIndicator() {
+    ImGui::SetNextWindowPos(ImVec2(10, 10), ImGuiCond_Always);
+    ImGui::SetNextWindowBgAlpha(0.85f);
+
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration |
+                                ImGuiWindowFlags_NoMove |
+                                ImGuiWindowFlags_NoSavedSettings |
+                                ImGuiWindowFlags_AlwaysAutoResize;
+
+    if (ImGui::Begin("##NavLockIndicator", nullptr, flags)) {
+        ImGui::PushFont(fontMedium_);
+        ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f), "NAVIGATION LOCKED");
+        ImGui::PopFont();
+
+        ImGui::Spacing();
+
+        auto timeRemaining = navLock_.ttlMs -
+            std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - navLock_.grantedTime
+            );
+
+        int remainingSeconds = timeRemaining.count() / 1000;
+        ImGui::Text("Owner: %.8s...", navLock_.ownerUUID.c_str());
+        ImGui::Text("Time: %d:%02d", remainingSeconds / 60, remainingSeconds % 60);
+
+        // TODO: Force release button (deferred to later step)
+    }
+    ImGui::End();
 }
 
 void Application::RenderMenuBar() {
@@ -1025,6 +1114,155 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
             // TODO: Implement polygon query in PolygonOverlay
             // For now, return empty list
             return json{{"polygons", json::array()}};
+        }
+
+        // Session commands
+        else if (method == "session.hello") {
+            std::string agentName = params.value("agent_name", "unknown");
+            std::string agentVersion = params.value("agent_version", "");
+            std::string sessionId = params.value("session_id", "");
+
+            // Log agent connection
+            std::cout << "Agent connected: " << agentName
+                      << " v" << agentVersion
+                      << " (session: " << sessionId << ")" << std::endl;
+
+            // Return session info including lock status
+            json result = {
+                {"session_id", sessionId},
+                {"agent_name", agentName},
+                {"pathview_version", "0.1.0"},
+                {"mcp_server_url", "http://127.0.0.1:9000"},
+                {"http_server_url", "http://127.0.0.1:8080"},
+                {"ipc_socket", ipcServer_ ? ipcServer_->GetSocketPath() : ""},
+                {"navigation_locked", IsNavigationLocked()},
+                {"lock_owner", navLock_.isLocked ? navLock_.ownerUUID : ""}
+            };
+
+            if (viewport_) {
+                result["viewport"] = {
+                    {"position", {
+                        {"x", viewport_->GetPosition().x},
+                        {"y", viewport_->GetPosition().y}
+                    }},
+                    {"zoom", viewport_->GetZoom()},
+                    {"window_width", windowWidth_},
+                    {"window_height", windowHeight_}
+                };
+            }
+
+            if (slideLoader_) {
+                result["slide"] = {
+                    {"width", slideLoader_->GetWidth()},
+                    {"height", slideLoader_->GetHeight()},
+                    {"levels", slideLoader_->GetLevelCount()},
+                    {"path", currentSlidePath_}
+                };
+            }
+
+            return result;
+        }
+
+        // Navigation lock commands
+        else if (method == "nav.lock") {
+            std::string ownerUUID = params.value("owner_uuid", "");
+            int ttlSeconds = params.value("ttl_seconds", 300);  // Default 5 minutes
+
+            if (ownerUUID.empty()) {
+                throw std::runtime_error("Missing 'owner_uuid' parameter");
+            }
+
+            // Enforce maximum TTL of 1 hour
+            const int MAX_TTL_SECONDS = 3600;
+            if (ttlSeconds > MAX_TTL_SECONDS) {
+                ttlSeconds = MAX_TTL_SECONDS;
+            }
+
+            // Check if already locked by another owner
+            if (navLock_.isLocked && navLock_.ownerUUID != ownerUUID && !navLock_.IsExpired()) {
+                auto timeRemaining = navLock_.ttlMs -
+                    std::chrono::duration_cast<std::chrono::milliseconds>(
+                        std::chrono::steady_clock::now() - navLock_.grantedTime
+                    );
+
+                return json{
+                    {"success", false},
+                    {"error", "Navigation already locked by another agent"},
+                    {"lock_owner", navLock_.ownerUUID},
+                    {"time_remaining_ms", timeRemaining.count()}
+                };
+            }
+
+            // Grant or renew lock
+            navLock_.isLocked = true;
+            navLock_.ownerUUID = ownerUUID;
+            navLock_.grantedTime = std::chrono::steady_clock::now();
+            navLock_.ttlMs = std::chrono::milliseconds(ttlSeconds * 1000);
+            navLock_.clientFd = ipcServer_ ? ipcServer_->GetCurrentClientFd() : -1;
+
+            std::cout << "Navigation lock granted to " << ownerUUID
+                      << " for " << ttlSeconds << "s" << std::endl;
+
+            return json{
+                {"success", true},
+                {"lock_owner", navLock_.ownerUUID},
+                {"granted_at", std::chrono::duration_cast<std::chrono::milliseconds>(
+                    navLock_.grantedTime.time_since_epoch()
+                ).count()},
+                {"ttl_ms", navLock_.ttlMs.count()}
+            };
+        }
+        else if (method == "nav.unlock") {
+            std::string ownerUUID = params.value("owner_uuid", "");
+
+            if (ownerUUID.empty()) {
+                throw std::runtime_error("Missing 'owner_uuid' parameter");
+            }
+
+            // Check ownership
+            if (!navLock_.IsOwnedBy(ownerUUID)) {
+                if (!navLock_.isLocked) {
+                    return json{
+                        {"success", false},
+                        {"error", "Navigation not locked"}
+                    };
+                } else {
+                    return json{
+                        {"success", false},
+                        {"error", "Not the lock owner"},
+                        {"lock_owner", navLock_.ownerUUID}
+                    };
+                }
+            }
+
+            std::cout << "Navigation lock released by " << ownerUUID << std::endl;
+            navLock_ = NavigationLock();  // Reset to unlocked
+
+            return json{
+                {"success", true},
+                {"message", "Navigation unlocked"}
+            };
+        }
+        else if (method == "nav.lock_status") {
+            if (!navLock_.isLocked || navLock_.IsExpired()) {
+                return json{
+                    {"locked", false}
+                };
+            }
+
+            auto timeRemaining = navLock_.ttlMs -
+                std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::steady_clock::now() - navLock_.grantedTime
+                );
+
+            return json{
+                {"locked", true},
+                {"owner_uuid", navLock_.ownerUUID},
+                {"time_remaining_ms", timeRemaining.count()},
+                {"granted_at", std::chrono::duration_cast<std::chrono::milliseconds>(
+                    navLock_.grantedTime.time_since_epoch()
+                ).count()}
+            };
         }
 
         // Unknown method
