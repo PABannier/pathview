@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <set>
+#include <cmath>
 
 bool PolygonLoader::Load(const std::string& filepath,
                          std::vector<Polygon>& outPolygons,
