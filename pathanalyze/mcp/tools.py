@@ -279,44 +279,61 @@ class MCPTools:
         center_x: float,
         center_y: float,
         zoom: float,
-        duration_ms: int = 500
+        duration_ms: int = 300
     ) -> str:
         """
-        Smooth camera move to target position.
-
-        TODO: Implement in PathView MCP server as 'nav.move' tool
+        Move camera to target position with smooth animation.
 
         Args:
-            center_x: Target X coordinate
-            center_y: Target Y coordinate
+            center_x: Target X coordinate (center of viewport)
+            center_y: Target Y coordinate (center of viewport)
             zoom: Target zoom level
-            duration_ms: Animation duration
+            duration_ms: Animation duration in milliseconds (default 300)
 
         Returns:
             Move token (UUID) for tracking completion
-
-        Raises:
-            MCPNotImplementedError: Not yet implemented
         """
-        raise MCPNotImplementedError("nav.move")
+        result = await self.client.call_tool("move_camera", {
+            "center_x": center_x,
+            "center_y": center_y,
+            "zoom": zoom,
+            "duration_ms": duration_ms
+        })
+        return result["token"]
 
     async def await_move(self, token: str, timeout_ms: int = 5000) -> dict[str, Any]:
         """
-        Wait for camera move to complete.
-
-        TODO: Implement in PathView MCP server as 'nav.await_move' tool
+        Wait for camera move to complete by polling.
 
         Args:
             token: Move token from move_camera()
-            timeout_ms: Wait timeout
+            timeout_ms: Maximum wait time in milliseconds (default 5000)
 
         Returns:
-            Final viewport state
+            Final viewport state: {completed, aborted, position, zoom}
 
         Raises:
-            MCPNotImplementedError: Not yet implemented
+            TimeoutError: If animation doesn't complete within timeout
         """
-        raise MCPNotImplementedError("nav.await_move")
+        import asyncio
+        import time
+
+        start = time.time()
+        poll_interval = 0.05  # 50ms between polls
+
+        while (time.time() - start) * 1000 < timeout_ms:
+            result = await self.client.call_tool("await_move", {"token": token})
+
+            if result["completed"]:
+                return result
+
+            await asyncio.sleep(poll_interval)
+
+        # Timeout - get final state anyway
+        result = await self.client.call_tool("await_move", {"token": token})
+        if not result["completed"]:
+            raise TimeoutError(f"Animation did not complete within {timeout_ms}ms")
+        return result
 
     async def create_roi(
         self,

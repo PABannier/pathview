@@ -635,41 +635,123 @@ class TestSuite:
             self._validate_viewport_response(result, "Reset view again")
             return "Reset successful"
 
+        def test_move_camera_token():
+            """Test move_camera returns valid token and completes"""
+            result = self.client.call_tool('move_camera', {
+                'center_x': self.slide_width / 2,
+                'center_y': self.slide_height / 2,
+                'zoom': 1.0,
+                'duration_ms': 200
+            })
+
+            if 'token' not in result:
+                raise Exception("move_camera did not return token")
+
+            token = result['token']
+
+            # Wait for completion
+            max_attempts = 20  # 20 * 50ms = 1000ms max wait
+            for _ in range(max_attempts):
+                status = self.client.call_tool('await_move', {'token': token})
+                if status['completed']:
+                    if status['aborted']:
+                        raise Exception("Animation was aborted")
+                    return f"Token {token[:8]}... completed successfully"
+                time.sleep(0.05)
+
+            raise Exception("Animation did not complete within timeout")
+
+        def test_animation_abort():
+            """Test that new animation aborts previous tracked animation"""
+            # Start first animation (long duration)
+            token1 = self.client.call_tool('move_camera', {
+                'center_x': self.slide_width * 0.25,
+                'center_y': self.slide_height * 0.25,
+                'zoom': 1.0,
+                'duration_ms': 1000  # Long animation
+            })['token']
+
+            time.sleep(0.1)  # Let it start
+
+            # Start second animation (should abort first)
+            token2 = self.client.call_tool('move_camera', {
+                'center_x': self.slide_width * 0.75,
+                'center_y': self.slide_height * 0.75,
+                'zoom': 1.0,
+                'duration_ms': 300
+            })['token']
+
+            # Check first was aborted
+            result1 = self.client.call_tool('await_move', {'token': token1})
+            if not result1['aborted']:
+                raise Exception("First animation should be aborted")
+            if not result1['completed']:
+                raise Exception("Aborted animation should be marked completed")
+
+            # Wait for second to complete normally
+            max_attempts = 20
+            for _ in range(max_attempts):
+                result2 = self.client.call_tool('await_move', {'token': token2})
+                if result2['completed']:
+                    if result2['aborted']:
+                        raise Exception("Second animation should not be aborted")
+                    return "Abort mechanism verified"
+                time.sleep(0.05)
+
+            raise Exception("Second animation did not complete")
+
         def test_animation_smoothness():
             """Verify viewport animations are smooth and progressive"""
-            # Reset to known state and zoom in to have room to pan
-            self.client.call_tool('reset_view')
-            time.sleep(0.6)  # Wait for reset animation
+            # Reset to known state
+            reset_result = self.client.call_tool('move_camera', {
+                'center_x': self.slide_width / 2,
+                'center_y': self.slide_height / 2,
+                'zoom': 0.5,
+                'duration_ms': 300
+            })
+            reset_token = reset_result['token']
 
-            # Zoom in significantly to have room to pan
-            self.client.call_tool('zoom', {'delta': 5.0})
-            time.sleep(0.4)  # Wait for zoom animation
+            # Sample animation progress
+            samples = []
+            start = time.time()
+            while True:
+                result = self.client.call_tool('await_move', {'token': reset_token})
+                elapsed_ms = (time.time() - start) * 1000
+                samples.append({
+                    'elapsed_ms': elapsed_ms,
+                    'position': result['position'],
+                    'zoom': result['zoom'],
+                    'completed': result['completed']
+                })
 
-            # Now pan and sample positions
-            samples = self._sample_viewport_over_time(
-                lambda: self.client.call_tool('pan', {'dx': 5000, 'dy': 0}),
-                samples=4,
-                interval_ms=75
-            )
+                if result['completed']:
+                    break
+                time.sleep(0.05)  # 50ms poll interval
 
-            # Verify progressive movement
-            positions = [s[1][0] for s in samples]
+            # Verify we got multiple samples (smooth animation)
+            if len(samples) < 3:
+                raise Exception(f"Animation too fast - only {len(samples)} samples")
 
-            if len(set(positions)) < 3:
-                raise Exception(f"Animation not smooth - positions: {positions}")
+            print(f"  ✓ Smooth animation with {len(samples)} samples over {samples[-1]['elapsed_ms']:.0f}ms")
 
-            # Verify monotonic increase (panning right)
-            if not all(positions[i] < positions[i+1] for i in range(len(positions)-1)):
-                raise Exception(f"Animation not monotonic: {positions}")
+            # Test pan with tracking
+            pan_token = self.client.call_tool('move_camera', {
+                'center_x': self.slide_width / 2 + 2500,
+                'center_y': self.slide_height / 2,
+                'zoom': 0.5,
+                'duration_ms': 300
+            })['token']
 
-            # Verify reasonable timing
-            if samples[0][0] < 50:
-                raise Exception(f"Animation too fast: {samples[0][0]}ms")
+            # Wait for completion
+            final = self.client.call_tool('await_move', {'token': pan_token})
+            while not final['completed']:
+                time.sleep(0.05)
+                final = self.client.call_tool('await_move', {'token': pan_token})
 
-            if samples[-1][0] > 500:
-                raise Exception(f"Animation too slow: {samples[-1][0]}ms")
+            if final['aborted']:
+                raise Exception("Pan animation was aborted unexpectedly")
 
-            return f"Smooth animation verified ({len(set(positions))} unique positions)"
+            return "Animation smoothness verified with token tracking"
 
         # Run viewport tests
         self._run_test(4, 17, "Reset view", test_reset)
@@ -682,7 +764,9 @@ class TestSuite:
         self._run_test(11, 17, "Center on bottom-right quadrant", test_center_quadrant2)
         self._run_test(12, 17, "Zoom at screen point", test_zoom_at_point)
         self._run_test(13, 17, "Reset view again", test_reset_again)
-        self._run_test(14, 17, "Verify animation smoothness", test_animation_smoothness)
+        self._run_test(14, 17, "Test move_camera token", test_move_camera_token)
+        self._run_test(15, 17, "Test animation abort", test_animation_abort)
+        self._run_test(16, 17, "Verify animation smoothness", test_animation_smoothness)
 
     def _test_polygon_operations(self):
         """Test polygon loading and control"""

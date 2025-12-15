@@ -408,6 +408,30 @@ void Application::Update() {
     if (viewport_) {
         double currentTimeMs = static_cast<double>(SDL_GetTicks());
         viewport_->UpdateAnimation(currentTimeMs);
+
+        // Track animation completion for tokens
+        for (auto& [key, token] : activeAnimations_) {
+            if (!token.completed && !token.aborted) {
+                if (!viewport_->animation_.IsActive()) {
+                    token.completed = true;
+                    token.finalPosition = viewport_->GetPosition();
+                    token.finalZoom = viewport_->GetZoom();
+                }
+            }
+        }
+
+        // Cleanup expired tokens (prevent memory leak)
+        auto now = std::chrono::steady_clock::now();
+        for (auto it = activeAnimations_.begin(); it != activeAnimations_.end(); ) {
+            auto age = std::chrono::duration_cast<std::chrono::milliseconds>(
+                now - it->second.createdAt
+            );
+            if (age.count() > MAX_TOKEN_AGE_MS) {
+                it = activeAnimations_.erase(it);
+            } else {
+                ++it;
+            }
+        }
     }
 }
 
@@ -1033,6 +1057,84 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
                     {"y", viewport_->GetPosition().y}
                 }},
                 {"zoom", viewport_->GetZoom()}
+            };
+        }
+        else if (method == "viewport.move") {
+            if (!viewport_) {
+                throw std::runtime_error("No slide loaded");
+            }
+
+            // Parse parameters
+            double centerX = params.at("center_x").get<double>();
+            double centerY = params.at("center_y").get<double>();
+            double zoom = params.at("zoom").get<double>();
+            double durationMs = params.value("duration_ms", 300.0);
+
+            // Clamp duration to reasonable range
+            durationMs = std::clamp(durationMs, 50.0, 5000.0);
+
+            // Abort any existing tracked animation
+            for (auto& pair : activeAnimations_) {
+                if (!pair.second.completed && !pair.second.aborted) {
+                    pair.second.aborted = true;
+                    pair.second.completed = true;
+                    pair.second.finalPosition = viewport_->GetPosition();
+                    pair.second.finalZoom = viewport_->GetZoom();
+                }
+            }
+
+            // Calculate target position (center to top-left)
+            double viewportWidth = windowWidth_ / zoom;
+            double viewportHeight = windowHeight_ / zoom;
+            Vec2 targetPos(centerX - viewportWidth / 2.0,
+                           centerY - viewportHeight / 2.0);
+
+            // Generate token
+            std::string token = GenerateUUID();
+
+            // Start animation using Animation::StartAt
+            double currentTime = static_cast<double>(SDL_GetTicks());
+            viewport_->animation_.StartAt(
+                viewport_->GetPosition(), viewport_->GetZoom(),
+                targetPos, zoom,
+                AnimationMode::SMOOTH,
+                currentTime,
+                durationMs
+            );
+
+            // Clamp final target to bounds (animation will lerp to clamped values)
+            viewport_->ClampToBounds();
+
+            // Track animation
+            pathview::AnimationToken animToken;
+            animToken.token = token;
+            animToken.completed = false;
+            animToken.aborted = false;
+            animToken.finalPosition = viewport_->GetPosition();  // After clamp
+            animToken.finalZoom = viewport_->GetZoom();
+            animToken.createdAt = std::chrono::steady_clock::now();
+            activeAnimations_[token] = animToken;
+
+            return json{{"token", token}};
+        }
+        else if (method == "viewport.await_move") {
+            std::string token = params.at("token").get<std::string>();
+
+            auto it = activeAnimations_.find(token);
+            if (it == activeAnimations_.end()) {
+                throw std::runtime_error("Unknown animation token: " + token);
+            }
+
+            const pathview::AnimationToken& animToken = it->second;
+
+            return json{
+                {"completed", animToken.completed},
+                {"aborted", animToken.aborted},
+                {"position", {
+                    {"x", animToken.finalPosition.x},
+                    {"y", animToken.finalPosition.y}
+                }},
+                {"zoom", animToken.finalZoom}
             };
         }
 

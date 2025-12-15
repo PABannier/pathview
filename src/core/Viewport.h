@@ -30,6 +30,9 @@ public:
     Viewport(int windowWidth, int windowHeight, int64_t slideWidth, int64_t slideHeight);
     ~Viewport() = default;
 
+    // Friend declaration to allow Application access to animation_ and ClampToBounds()
+    friend class Application;
+
     // Window size management
     void SetWindowSize(int width, int height);
     int GetWindowWidth() const { return windowWidth_; }

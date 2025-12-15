@@ -177,6 +177,22 @@ static ::mcp::json SendIPCRequest(const std::string& method, const ::mcp::json& 
     return SendIPCRequest("nav.lock_status", ::mcp::json::object());
 }
 
+::mcp::json HandleMoveCamera(const ::mcp::json& params, const std::string&) {
+    if (!params.contains("center_x") || !params.contains("center_y") || !params.contains("zoom")) {
+        throw ::mcp::mcp_exception(::mcp::error_code::invalid_params,
+                                    "Missing required parameters: center_x, center_y, zoom");
+    }
+    return SendIPCRequest("viewport.move", params);
+}
+
+::mcp::json HandleAwaitMove(const ::mcp::json& params, const std::string&) {
+    if (!params.contains("token")) {
+        throw ::mcp::mcp_exception(::mcp::error_code::invalid_params,
+                                    "Missing required parameter: token");
+    }
+    return SendIPCRequest("viewport.await_move", params);
+}
+
 } // namespace tools
 } // namespace mcp
 } // namespace pathview

@@ -55,6 +55,10 @@ void Initialize(ipc::IPCClient* ipcClient,
 ::mcp::json HandleNavUnlock(const ::mcp::json& params, const std::string& sessionId);
 ::mcp::json HandleNavLockStatus(const ::mcp::json& params, const std::string& sessionId);
 
+// Tracked camera movement tools
+::mcp::json HandleMoveCamera(const ::mcp::json& params, const std::string& sessionId);
+::mcp::json HandleAwaitMove(const ::mcp::json& params, const std::string& sessionId);
+
 } // namespace tools
 } // namespace mcp
 } // namespace pathview

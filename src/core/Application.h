@@ -30,6 +30,8 @@ namespace ipc {
 }
 }
 
+#include "AnimationToken.h"
+
 class Application {
 public:
     Application();
@@ -117,6 +119,10 @@ private:
 
     // Navigation lock state
     std::unique_ptr<NavigationLock> navLock_;
+
+    // Animation tracking for completion detection
+    std::map<std::string, pathview::AnimationToken> activeAnimations_;
+    static constexpr int MAX_TOKEN_AGE_MS = 60000;  // 60 seconds
 
     // Toolbar configuration
     static constexpr float TOOLBAR_HEIGHT = 40.0f;

@@ -147,7 +147,23 @@ void MCPServer::RegisterTools() {
         .build();
     server_->register_tool(nav_lock_status, tools::HandleNavLockStatus);
 
-    std::cout << "Registered " << 15 << " MCP tools" << std::endl;
+    // Tracked viewport movement
+    ::mcp::tool move_camera = ::mcp::tool_builder("move_camera")
+        .with_description("Move camera to target position with smooth animation and completion tracking")
+        .with_number_param("center_x", "Target X coordinate (center of viewport)")
+        .with_number_param("center_y", "Target Y coordinate (center of viewport)")
+        .with_number_param("zoom", "Target zoom level")
+        .with_number_param("duration_ms", "Animation duration in milliseconds (default 300)", false)
+        .build();
+    server_->register_tool(move_camera, tools::HandleMoveCamera);
+
+    ::mcp::tool await_move = ::mcp::tool_builder("await_move")
+        .with_description("Wait for camera move to complete (poll until done)")
+        .with_string_param("token", "Move token from move_camera")
+        .build();
+    server_->register_tool(await_move, tools::HandleAwaitMove);
+
+    std::cout << "Registered " << 17 << " MCP tools" << std::endl;
 }
 
 void MCPServer::Run() {
