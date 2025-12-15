@@ -34,6 +34,14 @@ PolygonOverlay::PolygonOverlay(SDL_Renderer* renderer)
 PolygonOverlay::~PolygonOverlay() {
 }
 
+void PolygonOverlay::SetSlideDimensions(double width, double height) {
+    slideWidth_ = width;
+    slideHeight_ = height;
+
+    // Rebuild spatial index if polygons are already loaded
+    BuildSpatialIndex();
+}
+
 bool PolygonOverlay::LoadPolygons(const std::string& filepath) {
     std::cout << "\n=== Loading Polygons ===" << std::endl;
     std::cout << "File: " << filepath << std::endl;
@@ -58,15 +66,7 @@ bool PolygonOverlay::LoadPolygons(const std::string& filepath) {
     }
 
     // Build spatial index if we have slide dimensions
-    if (slideWidth_ > 0 && slideHeight_ > 0 && !polygons_.empty()) {
-        std::cout << "Building spatial index..." << std::endl;
-
-        // Create spatial index with 100x100 grid
-        spatialIndex_ = std::make_unique<PolygonIndex>(100, 100, slideWidth_, slideHeight_);
-        spatialIndex_->Build(polygons_);
-
-        std::cout << "Spatial index built successfully" << std::endl;
-    }
+    BuildSpatialIndex();
 
     std::cout << "Polygon overlay ready with " << polygons_.size() << " polygons" << std::endl;
     std::cout << "Classes: " << classIds_.size() << std::endl;
@@ -339,4 +339,20 @@ void PolygonOverlay::InitializeDefaultColors() {
         classColors_[classId] = DEFAULT_COLORS[colorIndex % NUM_DEFAULT_COLORS];
         ++colorIndex;
     }
+}
+
+void PolygonOverlay::BuildSpatialIndex() {
+    // Clear any existing index if we cannot build a new one yet
+    if (slideWidth_ <= 0.0 || slideHeight_ <= 0.0 || polygons_.empty()) {
+        spatialIndex_.reset();
+        return;
+    }
+
+    std::cout << "Building spatial index..." << std::endl;
+
+    // Create spatial index with a fixed grid for now
+    spatialIndex_ = std::make_unique<PolygonIndex>(DEFAULT_GRID_SIZE, DEFAULT_GRID_SIZE, slideWidth_, slideHeight_);
+    spatialIndex_->Build(polygons_);
+
+    std::cout << "Spatial index built successfully" << std::endl;
 }

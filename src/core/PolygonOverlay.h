@@ -85,10 +85,7 @@ public:
     const std::vector<Polygon>& GetPolygons() const { return polygons_; }
 
     // Get slide dimensions (for spatial index)
-    void SetSlideDimensions(double width, double height) {
-        slideWidth_ = width;
-        slideHeight_ = height;
-    }
+    void SetSlideDimensions(double width, double height);
 
 private:
     SDL_Renderer* renderer_;
@@ -125,4 +122,9 @@ private:
 
     // Initialize default colors
     void InitializeDefaultColors();
+
+    // Spatial index maintenance
+    void BuildSpatialIndex();
+
+    static constexpr size_t DEFAULT_GRID_SIZE = 100;
 };
