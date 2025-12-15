@@ -25,7 +25,14 @@
       "Bash(chmod:*)",
       "Bash(./run_mcp_tests.sh:*)",
       "Bash(pkill:*)",
-      "Bash(./test/unit_tests:*)"
+      "Bash(./test/unit_tests:*)",
+      "Bash(bd --version:*)",
+      "Bash(env)",
+      "Bash(bd list:*)",
+      "Bash(python3:*)",
+      "Bash(bd ready:*)",
+      "Bash(pip install:*)",
+      "Bash(pytest:*)"
     ],
     "deny": [],
     "ask": []
