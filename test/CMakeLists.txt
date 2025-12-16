@@ -21,6 +21,7 @@ include(GoogleTest)
 find_package(OpenSlide REQUIRED)
 find_package(Protobuf REQUIRED)
 find_package(absl CONFIG REQUIRED)
+find_package(PNG REQUIRED)
 
 # ============================================================================
 # Unit Tests (Pure C++ - No SDL dependencies)
@@ -35,15 +36,19 @@ add_executable(unit_tests
     unit/polygon_triangulator_test.cpp
     unit/slide_renderer_test.cpp
     unit/navigation_lock_test.cpp
+    unit/png_encoder_test.cpp
+    unit/snapshot_manager_test.cpp
 )
 
 target_include_directories(unit_tests PRIVATE
     ${CMAKE_SOURCE_DIR}/src/core
+    ${CMAKE_SOURCE_DIR}/src/api/http
     ${CMAKE_SOURCE_DIR}/protobuf
     ${CMAKE_SOURCE_DIR}/test/mocks
     ${CMAKE_SOURCE_DIR}/external/cpp-mcp/common  # For json.hpp
     ${OPENSLIDE_INCLUDE_DIRS}
     ${Protobuf_INCLUDE_DIRS}
+    ${PNG_INCLUDE_DIRS}
 )
 
 # Link only the necessary core components
@@ -57,6 +62,7 @@ target_link_libraries(unit_tests PRIVATE
     absl::log_internal_check_op
     absl::log_internal_message
     absl::hash
+    PNG::PNG
 )
 
 # Link against source files directly to avoid SDL dependencies
@@ -72,6 +78,8 @@ target_sources(unit_tests PRIVATE
     ${CMAKE_SOURCE_DIR}/src/core/PolygonOverlay.cpp
     ${CMAKE_SOURCE_DIR}/src/core/PolygonLoader.cpp
     ${CMAKE_SOURCE_DIR}/src/core/NavigationLock.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/PNGEncoder.cpp
+    ${CMAKE_SOURCE_DIR}/src/api/http/SnapshotManager.cpp
     ${CMAKE_SOURCE_DIR}/protobuf/cell_polygons.pb.cc
 )
 

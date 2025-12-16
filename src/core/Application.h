@@ -5,6 +5,7 @@
 #include <string>
 #include <chrono>
 #include <uuid/uuid.h>
+#include <vector>
 
 class SlideLoader;
 class SlideRenderer;
@@ -15,6 +16,10 @@ class PolygonOverlay;
 class AnnotationManager;
 class NavigationLock;
 struct ImFont;
+
+namespace pathview {
+class ScreenshotBuffer;
+}
 
 // Forward declare IPC types
 namespace pathview {
@@ -74,6 +79,10 @@ private:
     void CheckLockExpiry();
     std::string GenerateUUID() const;
 
+    // Screenshot capture
+    void CaptureScreenshot();
+    std::vector<uint8_t> EncodePNG(const std::vector<uint8_t>& pixels, int width, int height);
+
     // SDL objects
     SDL_Window* window_;
     SDL_Renderer* renderer_;
@@ -123,6 +132,9 @@ private:
     // Animation tracking for completion detection
     std::map<std::string, pathview::AnimationToken> activeAnimations_;
     static constexpr int MAX_TOKEN_AGE_MS = 60000;  // 60 seconds
+
+    // Screenshot capture state
+    std::unique_ptr<pathview::ScreenshotBuffer> screenshotBuffer_;
 
     // Toolbar configuration
     static constexpr float TOOLBAR_HEIGHT = 40.0f;

@@ -8,6 +8,8 @@
 #include "AnnotationManager.h"
 #include "NavigationLock.h"
 #include "UIStyle.h"
+#include "PNGEncoder.h"
+#include "ScreenshotBuffer.h"
 #include "../api/ipc/IPCServer.h"
 #include "../api/ipc/IPCMessage.h"
 #include "imgui.h"
@@ -22,6 +24,7 @@
 #include <filesystem>
 #include <limits>
 #include <cfloat>
+#include <thread>
 
 Application::Application()
     : window_(nullptr)
@@ -36,6 +39,7 @@ Application::Application()
     , previewTexture_(nullptr)
     , sidebarVisible_(true)
     , navLock_(std::make_unique<NavigationLock>())
+    , screenshotBuffer_(std::make_unique<pathview::ScreenshotBuffer>())
 {
 }
 
@@ -475,6 +479,12 @@ void Application::Render() {
     // Render minimap overlay
     if (slideLoader_ && viewport_ && minimap_) {
         minimap_->Render(*viewport_, sidebarVisible_, sidebarVisible_ ? SIDEBAR_WIDTH : 0.0f);
+    }
+
+    // Capture screenshot if requested
+    if (screenshotBuffer_->IsCaptureRequested()) {
+        CaptureScreenshot();
+        screenshotBuffer_->ClearCaptureRequest();
     }
 
     // Render ImGui
@@ -1238,6 +1248,9 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
                 {"pathview_version", "0.1.0"},
                 {"mcp_server_url", "http://127.0.0.1:9000"},
                 {"http_server_url", "http://127.0.0.1:8080"},
+                {"stream_url", "http://127.0.0.1:8080/stream"},
+                {"stream_fps_default", 5},
+                {"stream_fps_max", 30},
                 {"ipc_socket", ipcServer_ ? ipcServer_->GetSocketPath() : ""},
                 {"navigation_locked", IsNavigationLocked()},
                 {"lock_owner", navLock_->IsLocked() ? navLock_->GetOwnerUUID() : ""}
@@ -1368,6 +1381,85 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
                 ).count()}
             };
         }
+        else if (method == "snapshot.capture") {
+            // Optional parameters
+            bool includeUI = params.value("include_ui", false);
+            int width = params.value("width", windowWidth_);
+            int height = params.value("height", windowHeight_);
+
+            // Note: includeUI and custom width/height not yet implemented
+            // Currently captures at window resolution without UI
+
+            // Request capture on next frame
+            screenshotBuffer_->RequestCapture();
+
+            // Wait for capture completion (max 2s timeout)
+            auto startTime = std::chrono::steady_clock::now();
+            while (!screenshotBuffer_->IsReady()) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                auto elapsed = std::chrono::steady_clock::now() - startTime;
+                if (elapsed > std::chrono::seconds(2)) {
+                    return json{{"error", "Screenshot capture timeout"}};
+                }
+            }
+
+            // Get captured data and encode PNG
+            std::vector<uint8_t> pixels;
+            int capturedWidth, capturedHeight;
+            if (!screenshotBuffer_->GetCapture(pixels, capturedWidth, capturedHeight)) {
+                return json{{"error", "Failed to get captured screenshot"}};
+            }
+
+            std::vector<uint8_t> pngData = EncodePNG(pixels, capturedWidth, capturedHeight);
+            screenshotBuffer_->MarkAsRead();
+
+            // Return PNG data as base64 for MCP server to store
+            // Convert to base64
+            static const char* base64_chars =
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                "abcdefghijklmnopqrstuvwxyz"
+                "0123456789+/";
+
+            std::string base64;
+            int i = 0;
+            unsigned char char_array_3[3];
+            unsigned char char_array_4[4];
+
+            for (size_t idx = 0; idx < pngData.size(); idx++) {
+                char_array_3[i++] = pngData[idx];
+                if (i == 3) {
+                    char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
+                    char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
+                    char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+                    char_array_4[3] = char_array_3[2] & 0x3f;
+
+                    for(i = 0; i < 4; i++)
+                        base64 += base64_chars[char_array_4[i]];
+                    i = 0;
+                }
+            }
+
+            if (i) {
+                for(int j = i; j < 3; j++)
+                    char_array_3[j] = '\0';
+
+                char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
+                char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
+                char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+
+                for (int j = 0; j < i + 1; j++)
+                    base64 += base64_chars[char_array_4[j]];
+
+                while(i++ < 3)
+                    base64 += '=';
+            }
+
+            return json{
+                {"png_data", base64},
+                {"width", capturedWidth},
+                {"height", capturedHeight}
+            };
+        }
 
         // Unknown method
         throw std::runtime_error("Unknown method: " + method);
@@ -1375,4 +1467,24 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
     } catch (const json::exception& e) {
         throw std::runtime_error(std::string("JSON error: ") + e.what());
     }
+}
+
+void Application::CaptureScreenshot() {
+    int w = windowWidth_;
+    int h = windowHeight_;
+
+    // Allocate buffer for RGBA pixels
+    std::vector<uint8_t> pixels(w * h * 4);
+
+    // Read pixels from renderer (MUST be on render thread)
+    SDL_RenderReadPixels(renderer_, nullptr, SDL_PIXELFORMAT_RGBA8888,
+                        pixels.data(), w * 4);
+
+    // Store in buffer (thread-safe)
+    screenshotBuffer_->StoreCapture(pixels, w, h);
+}
+
+std::vector<uint8_t> Application::EncodePNG(const std::vector<uint8_t>& pixels,
+                                            int width, int height) {
+    return pathview::PNGEncoder::Encode(pixels, width, height);
 }

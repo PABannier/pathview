@@ -10,6 +10,22 @@ namespace http {
 SnapshotManager::SnapshotManager(size_t maxSnapshots)
     : maxSnapshots_(maxSnapshots)
 {
+    // Start cleanup thread
+    cleanupThread_ = std::thread([this]() {
+        while (running_) {
+            std::this_thread::sleep_for(std::chrono::seconds(30));
+            if (running_) {
+                Cleanup();
+            }
+        }
+    });
+}
+
+SnapshotManager::~SnapshotManager() {
+    running_ = false;
+    if (cleanupThread_.joinable()) {
+        cleanupThread_.join();
+    }
 }
 
 std::string SnapshotManager::AddSnapshot(const std::vector<uint8_t>& pngData, int width, int height) {
@@ -119,6 +135,22 @@ std::string SnapshotManager::GenerateUUID() {
     }
 
     return oss.str();
+}
+
+void SnapshotManager::AddStreamFrame(const std::string& id) {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    streamFrameIds_.push_back(id);
+
+    // Evict oldest if buffer full
+    while (streamFrameIds_.size() > maxStreamFrames_) {
+        streamFrameIds_.pop_front();
+    }
+}
+
+std::string SnapshotManager::GetLatestStreamFrame() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    return streamFrameIds_.empty() ? "" : streamFrameIds_.back();
 }
 
 } // namespace http

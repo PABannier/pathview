@@ -27,6 +27,9 @@ find_package(NFD REQUIRED)
 find_package(Protobuf REQUIRED)
 find_package(OpenSlide REQUIRED)
 
+# Find PNG
+find_package(PNG REQUIRED)
+
 # Find UUID library
 if(APPLE)
     # macOS has UUID in System framework
@@ -79,6 +82,8 @@ set(APP_SOURCES
     src/core/PolygonTriangulator.cpp
     src/core/AnnotationManager.cpp
     src/core/NavigationLock.cpp
+    src/core/PNGEncoder.cpp
+    src/core/ScreenshotBuffer.cpp
     protobuf/cell_polygons.pb.cc
 )
 
@@ -94,6 +99,7 @@ target_include_directories(pathview PRIVATE
     ${IMGUI_DIR}/backends
     ${OPENSLIDE_INCLUDE_DIRS}
     ${Protobuf_INCLUDE_DIRS}
+    ${PNG_INCLUDE_DIRS}
 )
 
 # Add compile definitions for resource paths
@@ -113,6 +119,7 @@ target_link_libraries(pathview PRIVATE
     absl::log_internal_message
     absl::hash
     ${UUID_LIBRARY}
+    PNG::PNG
 )
 
 # Platform-specific settings

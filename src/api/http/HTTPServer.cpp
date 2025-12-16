@@ -1,6 +1,8 @@
 #include "HTTPServer.h"
 #include "httplib.h"  // From cpp-mcp/common/httplib.h
 #include <iostream>
+#include <sstream>
+#include <algorithm>
 
 namespace pathview {
 namespace http {
@@ -45,6 +47,81 @@ void HTTPServer::SetupRoutes() {
         );
     });
 
+    // MJPEG stream endpoint
+    server_->Get("/stream", [this](const httplib::Request& req, httplib::Response& res) {
+        // Parse FPS parameter (default 5, max 30)
+        int fps = 5;
+        if (req.has_param("fps")) {
+            try {
+                fps = std::stoi(req.get_param_value("fps"));
+                fps = std::min(30, std::max(1, fps));
+            } catch (...) {
+                fps = 5;
+            }
+        }
+        int frameDelayMs = 1000 / fps;
+
+        // Set MJPEG headers
+        res.set_header("Content-Type", "multipart/x-mixed-replace; boundary=frame");
+        res.set_header("Cache-Control", "no-cache");
+        res.set_header("Connection", "keep-alive");
+
+        // Use content provider for streaming
+        res.set_content_provider(
+            "multipart/x-mixed-replace; boundary=frame",
+            [this, frameDelayMs](size_t offset, httplib::DataSink& sink) {
+                auto lastFrameTime = std::chrono::steady_clock::now();
+
+                while (running_) {
+                    // FPS throttling
+                    auto now = std::chrono::steady_clock::now();
+                    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        now - lastFrameTime).count();
+
+                    if (elapsed < frameDelayMs) {
+                        std::this_thread::sleep_for(
+                            std::chrono::milliseconds(frameDelayMs - elapsed));
+                    }
+                    lastFrameTime = std::chrono::steady_clock::now();
+
+                    // Get latest snapshot from stream buffer
+                    std::string snapshotId = snapshotManager_->GetLatestStreamFrame();
+                    if (snapshotId.empty()) {
+                        continue;
+                    }
+
+                    auto snapshot = snapshotManager_->GetSnapshot(snapshotId);
+                    if (!snapshot) {
+                        continue;
+                    }
+
+                    // Build MJPEG frame
+                    std::ostringstream frame;
+                    frame << "--frame\r\n"
+                         << "Content-Type: image/png\r\n"
+                         << "Content-Length: " << snapshot->pngData.size() << "\r\n\r\n";
+
+                    // Write frame header
+                    if (!sink.write(frame.str().data(), frame.str().size())) {
+                        return false;  // Client disconnected
+                    }
+
+                    // Write frame data
+                    if (!sink.write(reinterpret_cast<const char*>(snapshot->pngData.data()),
+                                   snapshot->pngData.size())) {
+                        return false;
+                    }
+
+                    // Write frame footer
+                    if (!sink.write("\r\n", 2)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        );
+    });
+
     // Root endpoint
     server_->Get("/", [this](const httplib::Request&, httplib::Response& res) {
         std::string html = R"(
@@ -58,6 +135,7 @@ void HTTPServer::SetupRoutes() {
     <ul>
         <li>GET /health - Health check</li>
         <li>GET /snapshot/{id} - Get snapshot image</li>
+        <li>GET /stream?fps=N - MJPEG stream (default 5 FPS, max 30)</li>
     </ul>
     <p>Cached snapshots: )" + std::to_string(snapshotManager_->GetCacheSize()) + R"(</p>
 </body>

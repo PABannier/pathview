@@ -101,10 +101,66 @@ static ::mcp::json SendIPCRequest(const std::string& method, const ::mcp::json& 
 }
 
 ::mcp::json HandleCaptureSnapshot(const ::mcp::json& params, const std::string&) {
-    // TODO: Implement snapshot capture via IPC
-    // For now, return a placeholder
-    throw ::mcp::mcp_exception(::mcp::error_code::internal_error,
-                                "Snapshot capture not yet implemented");
+    // Send IPC request to capture screenshot
+    ::mcp::json result = SendIPCRequest("snapshot.capture", params);
+
+    // Decode base64 PNG data
+    std::string base64 = result["png_data"].get<std::string>();
+    int width = result["width"].get<int>();
+    int height = result["height"].get<int>();
+
+    // Decode base64 to binary
+    static const std::string base64_chars =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "abcdefghijklmnopqrstuvwxyz"
+        "0123456789+/";
+
+    std::vector<uint8_t> pngData;
+    int in_len = base64.size();
+    int i = 0;
+    int j = 0;
+    int in_ = 0;
+    unsigned char char_array_4[4], char_array_3[3];
+
+    while (in_len-- && (base64[in_] != '=') && (isalnum(base64[in_]) || (base64[in_] == '+') || (base64[in_] == '/'))) {
+        char_array_4[i++] = base64[in_]; in_++;
+        if (i == 4) {
+            for (i = 0; i < 4; i++)
+                char_array_4[i] = base64_chars.find(char_array_4[i]);
+
+            char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
+            char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
+            char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
+
+            for (i = 0; i < 3; i++)
+                pngData.push_back(char_array_3[i]);
+            i = 0;
+        }
+    }
+
+    if (i) {
+        for (j = 0; j < i; j++)
+            char_array_4[j] = base64_chars.find(char_array_4[j]);
+
+        char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
+        char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
+
+        for (j = 0; j < i - 1; j++)
+            pngData.push_back(char_array_3[j]);
+    }
+
+    // Store in snapshot manager
+    std::string snapshotId = g_snapshotManager->AddSnapshot(pngData, width, height);
+
+    // Also add to stream buffer for MJPEG streaming
+    g_snapshotManager->AddStreamFrame(snapshotId);
+
+    return ::mcp::json{
+        {"id", snapshotId},
+        {"url", "http://127.0.0.1:8080/snapshot/" + snapshotId},
+        {"width", width},
+        {"height", height}
+    };
 }
 
 ::mcp::json HandleLoadPolygons(const ::mcp::json& params, const std::string&) {

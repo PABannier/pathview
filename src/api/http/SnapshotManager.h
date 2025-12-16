@@ -4,9 +4,12 @@
 #include <vector>
 #include <map>
 #include <list>
+#include <deque>
 #include <mutex>
 #include <chrono>
 #include <optional>
+#include <thread>
+#include <atomic>
 
 namespace pathview {
 namespace http {
@@ -25,6 +28,7 @@ public:
     };
 
     explicit SnapshotManager(size_t maxSnapshots = 50);
+    ~SnapshotManager();
 
     /**
      * Add a new snapshot and generate UUID
@@ -53,6 +57,19 @@ public:
      */
     size_t GetCacheSize() const;
 
+    /**
+     * Add snapshot ID to stream buffer
+     * Used for MJPEG streaming - maintains circular buffer of recent frames
+     * @param id Snapshot UUID to add to stream buffer
+     */
+    void AddStreamFrame(const std::string& id);
+
+    /**
+     * Get the latest stream frame ID
+     * @return Most recent snapshot ID in stream buffer, or empty string if none
+     */
+    std::string GetLatestStreamFrame() const;
+
 private:
     void EvictOldest();
     std::string GenerateUUID();
@@ -63,6 +80,14 @@ private:
 
     size_t maxSnapshots_;
     static constexpr std::chrono::hours TTL{1};  // 1 hour TTL
+
+    // Stream buffer (separate from LRU cache)
+    std::deque<std::string> streamFrameIds_;
+    size_t maxStreamFrames_{3};
+
+    // Cleanup thread
+    std::thread cleanupThread_;
+    std::atomic<bool> running_{true};
 };
 
 } // namespace http
