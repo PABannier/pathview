@@ -62,6 +62,7 @@ namespace ErrorCodes {
     constexpr int NoPolygonsLoaded = -32001;
     constexpr int FileNotFound = -32002;
     constexpr int InvalidOperation = -32003;
+    constexpr int AnnotationNotFound = -32004;
 }
 
 } // namespace ipc

@@ -163,7 +163,33 @@ void MCPServer::RegisterTools() {
         .build();
     server_->register_tool(await_move, tools::HandleAwaitMove);
 
-    std::cout << "Registered " << 17 << " MCP tools" << std::endl;
+    // Annotation/ROI tools
+    ::mcp::tool create_annotation = ::mcp::tool_builder("create_annotation")
+        .with_description("Create a polygon annotation/ROI with automatic cell counting. Params: vertices (array of [x,y] pairs), name (optional string)")
+        .build();
+    server_->register_tool(create_annotation, tools::HandleCreateAnnotation);
+
+    ::mcp::tool list_annotations = ::mcp::tool_builder("list_annotations")
+        .with_description("List all annotations with optional metrics. Params: include_metrics (optional boolean)")
+        .build();
+    server_->register_tool(list_annotations, tools::HandleListAnnotations);
+
+    ::mcp::tool get_annotation = ::mcp::tool_builder("get_annotation")
+        .with_description("Get detailed info about a specific annotation. Params: id (number)")
+        .build();
+    server_->register_tool(get_annotation, tools::HandleGetAnnotation);
+
+    ::mcp::tool delete_annotation = ::mcp::tool_builder("delete_annotation")
+        .with_description("Delete an annotation by ID. Params: id (number)")
+        .build();
+    server_->register_tool(delete_annotation, tools::HandleDeleteAnnotation);
+
+    ::mcp::tool compute_roi_metrics = ::mcp::tool_builder("compute_roi_metrics")
+        .with_description("Compute metrics for arbitrary polygon WITHOUT creating annotation (quick probe). Params: vertices (array of [x,y] pairs)")
+        .build();
+    server_->register_tool(compute_roi_metrics, tools::HandleComputeROIMetrics);
+
+    std::cout << "Registered " << 22 << " MCP tools" << std::endl;
 }
 
 void MCPServer::Run() {

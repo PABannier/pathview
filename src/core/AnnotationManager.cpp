@@ -187,6 +187,177 @@ void AnnotationManager::ComputeCellCounts(AnnotationPolygon& annotation,
     std::cout << std::endl;
 }
 
+// ========== PROGRAMMATIC ANNOTATION API ==========
+
+int AnnotationManager::CreateAnnotation(const std::vector<Vec2>& vertices,
+                                        const std::string& name,
+                                        PolygonOverlay* polygonOverlay) {
+    if (!ValidateVertices(vertices)) {
+        std::cerr << "Cannot create annotation: invalid vertices" << std::endl;
+        return -1;
+    }
+
+    // Create new annotation
+    AnnotationPolygon annotation(nextAnnotationId_++);
+    annotation.vertices = vertices;
+
+    // Set name (use default if empty)
+    if (!name.empty()) {
+        annotation.name = name;
+    }
+
+    annotation.ComputeBoundingBox();
+
+    // Compute cell counts if polygon overlay provided
+    if (polygonOverlay) {
+        ComputeCellCounts(annotation, polygonOverlay);
+    }
+
+    int newId = annotation.id;
+    annotations_.push_back(annotation);
+
+    std::cout << "Created annotation programmatically: " << annotation.name
+              << " (ID: " << newId << ") with " << annotation.vertices.size()
+              << " vertices" << std::endl;
+
+    return newId;
+}
+
+AnnotationPolygon* AnnotationManager::GetAnnotationById(int id) {
+    for (auto& annotation : annotations_) {
+        if (annotation.id == id) {
+            return &annotation;
+        }
+    }
+    return nullptr;
+}
+
+const AnnotationPolygon* AnnotationManager::GetAnnotationById(int id) const {
+    for (const auto& annotation : annotations_) {
+        if (annotation.id == id) {
+            return &annotation;
+        }
+    }
+    return nullptr;
+}
+
+bool AnnotationManager::DeleteAnnotationById(int id) {
+    for (auto it = annotations_.begin(); it != annotations_.end(); ++it) {
+        if (it->id == id) {
+            std::cout << "Deleting annotation by ID: " << it->name
+                     << " (ID: " << id << ")" << std::endl;
+            annotations_.erase(it);
+            return true;
+        }
+    }
+    return false;
+}
+
+AnnotationManager::AnnotationMetrics
+AnnotationManager::ComputeMetricsForVertices(const std::vector<Vec2>& vertices,
+                                             PolygonOverlay* polygonOverlay) const {
+    AnnotationMetrics metrics;
+
+    if (!ValidateVertices(vertices)) {
+        std::cerr << "Cannot compute metrics: invalid vertices" << std::endl;
+        metrics.boundingBox = Rect{0, 0, 0, 0};
+        metrics.area = 0.0;
+        metrics.perimeter = 0.0;
+        metrics.totalCells = 0;
+        return metrics;
+    }
+
+    // Create temporary annotation to compute metrics
+    AnnotationPolygon tempAnnotation(0);  // Temporary ID
+    tempAnnotation.vertices = vertices;
+    tempAnnotation.ComputeBoundingBox();
+
+    metrics.boundingBox = tempAnnotation.boundingBox;
+    metrics.area = ComputeArea(vertices);
+    metrics.perimeter = ComputePerimeter(vertices);
+
+    // Compute cell counts if polygon overlay provided
+    if (polygonOverlay) {
+        const auto& cellPolygons = polygonOverlay->GetPolygons();
+
+        for (const auto& cellPolygon : cellPolygons) {
+            if (cellPolygon.vertices.empty()) continue;
+
+            // Compute centroid of cell polygon
+            Vec2 centroid(0, 0);
+            for (const auto& vertex : cellPolygon.vertices) {
+                centroid.x += vertex.x;
+                centroid.y += vertex.y;
+            }
+            centroid.x /= cellPolygon.vertices.size();
+            centroid.y /= cellPolygon.vertices.size();
+
+            // Check if centroid is inside the temporary annotation
+            if (tempAnnotation.ContainsPoint(centroid)) {
+                metrics.cellCounts[cellPolygon.classId]++;
+            }
+        }
+    }
+
+    // Compute total cells
+    metrics.totalCells = 0;
+    for (const auto& [classId, count] : metrics.cellCounts) {
+        metrics.totalCells += count;
+    }
+
+    return metrics;
+}
+
+// ========== GEOMETRY CALCULATION HELPERS ==========
+
+double AnnotationManager::ComputeArea(const std::vector<Vec2>& vertices) {
+    if (vertices.size() < 3) return 0.0;
+
+    // Shoelace formula: Area = 0.5 * |Σ(x_i * y_{i+1} - x_{i+1} * y_i)|
+    double area = 0.0;
+    size_t n = vertices.size();
+
+    for (size_t i = 0; i < n; ++i) {
+        size_t j = (i + 1) % n;
+        area += vertices[i].x * vertices[j].y;
+        area -= vertices[j].x * vertices[i].y;
+    }
+
+    return std::abs(area) / 2.0;
+}
+
+double AnnotationManager::ComputePerimeter(const std::vector<Vec2>& vertices) {
+    if (vertices.size() < 2) return 0.0;
+
+    double perimeter = 0.0;
+    size_t n = vertices.size();
+
+    for (size_t i = 0; i < n; ++i) {
+        size_t j = (i + 1) % n;
+        double dx = vertices[j].x - vertices[i].x;
+        double dy = vertices[j].y - vertices[i].y;
+        perimeter += std::sqrt(dx * dx + dy * dy);
+    }
+
+    return perimeter;
+}
+
+bool AnnotationManager::ValidateVertices(const std::vector<Vec2>& vertices) {
+    if (vertices.size() < 3) {
+        return false;
+    }
+
+    // Check for NaN or infinity
+    for (const auto& v : vertices) {
+        if (std::isnan(v.x) || std::isnan(v.y) ||
+            std::isinf(v.x) || std::isinf(v.y)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 // ========== RENDERING METHODS ==========
 
 void AnnotationManager::RenderAnnotations(const Viewport& viewport) {

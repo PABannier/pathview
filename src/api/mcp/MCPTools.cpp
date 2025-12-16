@@ -249,6 +249,42 @@ static ::mcp::json SendIPCRequest(const std::string& method, const ::mcp::json& 
     return SendIPCRequest("viewport.await_move", params);
 }
 
+::mcp::json HandleCreateAnnotation(const ::mcp::json& params, const std::string&) {
+    if (!params.contains("vertices")) {
+        throw ::mcp::mcp_exception(::mcp::error_code::invalid_params,
+                                    "Missing 'vertices' parameter");
+    }
+    return SendIPCRequest("annotations.create", params);
+}
+
+::mcp::json HandleListAnnotations(const ::mcp::json& params, const std::string&) {
+    return SendIPCRequest("annotations.list", params);
+}
+
+::mcp::json HandleGetAnnotation(const ::mcp::json& params, const std::string&) {
+    if (!params.contains("id")) {
+        throw ::mcp::mcp_exception(::mcp::error_code::invalid_params,
+                                    "Missing 'id' parameter");
+    }
+    return SendIPCRequest("annotations.get", params);
+}
+
+::mcp::json HandleDeleteAnnotation(const ::mcp::json& params, const std::string&) {
+    if (!params.contains("id")) {
+        throw ::mcp::mcp_exception(::mcp::error_code::invalid_params,
+                                    "Missing 'id' parameter");
+    }
+    return SendIPCRequest("annotations.delete", params);
+}
+
+::mcp::json HandleComputeROIMetrics(const ::mcp::json& params, const std::string&) {
+    if (!params.contains("vertices")) {
+        throw ::mcp::mcp_exception(::mcp::error_code::invalid_params,
+                                    "Missing 'vertices' parameter");
+    }
+    return SendIPCRequest("annotations.compute_metrics", params);
+}
+
 } // namespace tools
 } // namespace mcp
 } // namespace pathview

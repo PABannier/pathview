@@ -62,6 +62,37 @@ public:
     // Cell counting
     void ComputeCellCounts(AnnotationPolygon& annotation, PolygonOverlay* polygonOverlay);
 
+    // Programmatic annotation creation (for IPC/MCP)
+    int CreateAnnotation(const std::vector<Vec2>& vertices,
+                         const std::string& name = "",
+                         PolygonOverlay* polygonOverlay = nullptr);
+
+    // Query by ID
+    AnnotationPolygon* GetAnnotationById(int id);
+    const AnnotationPolygon* GetAnnotationById(int id) const;
+
+    // Delete by ID (returns true if found and deleted)
+    bool DeleteAnnotationById(int id);
+
+    // Metrics computation structure
+    struct AnnotationMetrics {
+        Rect boundingBox;
+        double area;
+        double perimeter;
+        std::map<int, int> cellCounts;
+        int totalCells;
+    };
+
+    // Compute metrics for arbitrary vertices (no persistence - "quick probe")
+    AnnotationMetrics ComputeMetricsForVertices(
+        const std::vector<Vec2>& vertices,
+        PolygonOverlay* polygonOverlay = nullptr) const;
+
+    // Geometry calculation helpers (public static for testing)
+    static double ComputeArea(const std::vector<Vec2>& vertices);
+    static double ComputePerimeter(const std::vector<Vec2>& vertices);
+    static bool ValidateVertices(const std::vector<Vec2>& vertices);
+
 private:
     // Drawing state structure
     struct DrawingState {

@@ -1460,6 +1460,253 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
                 {"height", capturedHeight}
             };
         }
+        else if (method == "annotations.create") {
+            // Check if slide is loaded
+            if (!slideLoader_) {
+                throw std::runtime_error("No slide loaded");
+            }
+
+            // Parse and validate vertices
+            if (!params.contains("vertices")) {
+                throw std::runtime_error("Missing 'vertices' parameter");
+            }
+
+            auto verticesJson = params["vertices"];
+            if (!verticesJson.is_array() || verticesJson.size() < 3) {
+                throw std::runtime_error("vertices must be an array with at least 3 points");
+            }
+
+            // Convert JSON vertices to Vec2 vector
+            std::vector<Vec2> vertices;
+            for (const auto& vertexJson : verticesJson) {
+                if (!vertexJson.is_array() || vertexJson.size() != 2) {
+                    throw std::runtime_error("Each vertex must be an array of [x, y]");
+                }
+                vertices.push_back(Vec2(vertexJson[0].get<double>(),
+                                       vertexJson[1].get<double>()));
+            }
+
+            // Get optional name
+            std::string name = params.value("name", "");
+
+            // Create annotation
+            int id = annotationManager_->CreateAnnotation(vertices, name,
+                                                         polygonOverlay_.get());
+
+            if (id < 0) {
+                throw std::runtime_error("Failed to create annotation (invalid vertices)");
+            }
+
+            // Get the created annotation
+            const auto* annotation = annotationManager_->GetAnnotationById(id);
+            if (!annotation) {
+                throw std::runtime_error("Failed to retrieve created annotation");
+            }
+
+            // Compute area and build response
+            double area = AnnotationManager::ComputeArea(annotation->vertices);
+
+            json cellCountsJson = json::object();
+            int totalCells = 0;
+            for (const auto& [classId, count] : annotation->cellCounts) {
+                cellCountsJson[std::to_string(classId)] = count;
+                totalCells += count;
+            }
+            if (!annotation->cellCounts.empty()) {
+                cellCountsJson["total"] = totalCells;
+            }
+
+            return json{
+                {"id", annotation->id},
+                {"name", annotation->name},
+                {"vertex_count", annotation->vertices.size()},
+                {"bounding_box", {
+                    {"x", annotation->boundingBox.x},
+                    {"y", annotation->boundingBox.y},
+                    {"width", annotation->boundingBox.width},
+                    {"height", annotation->boundingBox.height}
+                }},
+                {"area", area},
+                {"cell_counts", cellCountsJson}
+            };
+        }
+        else if (method == "annotations.list") {
+            // Check if slide is loaded
+            if (!slideLoader_) {
+                throw std::runtime_error("No slide loaded");
+            }
+
+            bool includeMetrics = params.value("include_metrics", false);
+
+            const auto& annotations = annotationManager_->GetAnnotations();
+            json annotationsJson = json::array();
+
+            for (const auto& annotation : annotations) {
+                double area = AnnotationManager::ComputeArea(annotation.vertices);
+
+                json annotationJson = {
+                    {"id", annotation.id},
+                    {"name", annotation.name},
+                    {"vertex_count", annotation.vertices.size()},
+                    {"bounding_box", {
+                        {"x", annotation.boundingBox.x},
+                        {"y", annotation.boundingBox.y},
+                        {"width", annotation.boundingBox.width},
+                        {"height", annotation.boundingBox.height}
+                    }},
+                    {"area", area}
+                };
+
+                if (includeMetrics) {
+                    json cellCountsJson = json::object();
+                    int totalCells = 0;
+                    for (const auto& [classId, count] : annotation.cellCounts) {
+                        cellCountsJson[std::to_string(classId)] = count;
+                        totalCells += count;
+                    }
+                    if (!annotation.cellCounts.empty()) {
+                        cellCountsJson["total"] = totalCells;
+                    }
+                    annotationJson["cell_counts"] = cellCountsJson;
+                }
+
+                annotationsJson.push_back(annotationJson);
+            }
+
+            return json{
+                {"annotations", annotationsJson},
+                {"count", annotations.size()}
+            };
+        }
+        else if (method == "annotations.get") {
+            // Check if slide is loaded
+            if (!slideLoader_) {
+                throw std::runtime_error("No slide loaded");
+            }
+
+            // Parse and validate id parameter
+            if (!params.contains("id")) {
+                throw std::runtime_error("Missing 'id' parameter");
+            }
+
+            int id = params["id"].get<int>();
+
+            // Get annotation by ID
+            const auto* annotation = annotationManager_->GetAnnotationById(id);
+            if (!annotation) {
+                throw std::runtime_error("Annotation with id " + std::to_string(id) + " not found");
+            }
+
+            // Convert vertices to JSON
+            json verticesJson = json::array();
+            for (const auto& vertex : annotation->vertices) {
+                verticesJson.push_back({vertex.x, vertex.y});
+            }
+
+            // Compute metrics
+            double area = AnnotationManager::ComputeArea(annotation->vertices);
+            double perimeter = AnnotationManager::ComputePerimeter(annotation->vertices);
+
+            json cellCountsJson = json::object();
+            int totalCells = 0;
+            for (const auto& [classId, count] : annotation->cellCounts) {
+                cellCountsJson[std::to_string(classId)] = count;
+                totalCells += count;
+            }
+            if (!annotation->cellCounts.empty()) {
+                cellCountsJson["total"] = totalCells;
+            }
+
+            return json{
+                {"id", annotation->id},
+                {"name", annotation->name},
+                {"vertices", verticesJson},
+                {"vertex_count", annotation->vertices.size()},
+                {"bounding_box", {
+                    {"x", annotation->boundingBox.x},
+                    {"y", annotation->boundingBox.y},
+                    {"width", annotation->boundingBox.width},
+                    {"height", annotation->boundingBox.height}
+                }},
+                {"area", area},
+                {"perimeter", perimeter},
+                {"cell_counts", cellCountsJson}
+            };
+        }
+        else if (method == "annotations.delete") {
+            // Check if slide is loaded
+            if (!slideLoader_) {
+                throw std::runtime_error("No slide loaded");
+            }
+
+            // Parse and validate id parameter
+            if (!params.contains("id")) {
+                throw std::runtime_error("Missing 'id' parameter");
+            }
+
+            int id = params["id"].get<int>();
+
+            // Delete annotation by ID
+            bool deleted = annotationManager_->DeleteAnnotationById(id);
+            if (!deleted) {
+                throw std::runtime_error("Annotation with id " + std::to_string(id) + " not found");
+            }
+
+            return json{
+                {"success", true},
+                {"deleted_id", id}
+            };
+        }
+        else if (method == "annotations.compute_metrics") {
+            // Check if slide is loaded
+            if (!slideLoader_) {
+                throw std::runtime_error("No slide loaded");
+            }
+
+            // Parse and validate vertices
+            if (!params.contains("vertices")) {
+                throw std::runtime_error("Missing 'vertices' parameter");
+            }
+
+            auto verticesJson = params["vertices"];
+            if (!verticesJson.is_array() || verticesJson.size() < 3) {
+                throw std::runtime_error("vertices must be an array with at least 3 points");
+            }
+
+            // Convert JSON vertices to Vec2 vector
+            std::vector<Vec2> vertices;
+            for (const auto& vertexJson : verticesJson) {
+                if (!vertexJson.is_array() || vertexJson.size() != 2) {
+                    throw std::runtime_error("Each vertex must be an array of [x, y]");
+                }
+                vertices.push_back(Vec2(vertexJson[0].get<double>(),
+                                       vertexJson[1].get<double>()));
+            }
+
+            // Compute metrics without creating annotation
+            auto metrics = annotationManager_->ComputeMetricsForVertices(vertices,
+                                                                        polygonOverlay_.get());
+
+            json cellCountsJson = json::object();
+            for (const auto& [classId, count] : metrics.cellCounts) {
+                cellCountsJson[std::to_string(classId)] = count;
+            }
+            if (!metrics.cellCounts.empty()) {
+                cellCountsJson["total"] = metrics.totalCells;
+            }
+
+            return json{
+                {"bounding_box", {
+                    {"x", metrics.boundingBox.x},
+                    {"y", metrics.boundingBox.y},
+                    {"width", metrics.boundingBox.width},
+                    {"height", metrics.boundingBox.height}
+                }},
+                {"area", metrics.area},
+                {"perimeter", metrics.perimeter},
+                {"cell_counts", cellCountsJson}
+            };
+        }
 
         // Unknown method
         throw std::runtime_error("Unknown method: " + method);

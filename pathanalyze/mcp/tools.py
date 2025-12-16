@@ -338,43 +338,92 @@ class MCPTools:
     async def create_roi(
         self,
         vertices: list[tuple[float, float]],
-        label: str | None = None,
-        color: str | None = None
-    ) -> str:
+        name: str | None = None
+    ) -> dict[str, Any]:
         """
         Create a region of interest annotation.
 
-        TODO: Implement in PathView MCP server as 'annotations.create' tool
-
         Args:
-            vertices: Polygon vertices [(x1, y1), (x2, y2), ...]
-            label: Optional ROI label
-            color: Optional color (hex string)
+            vertices: Polygon vertices [(x1, y1), (x2, y2), ...] in slide coordinates
+            name: Optional custom name for the ROI
 
         Returns:
-            ROI ID (UUID)
+            Dictionary with keys:
+            - id (int): Unique annotation ID
+            - name (str): Annotation name
+            - vertex_count (int): Number of vertices
+            - bounding_box (dict): {x, y, width, height}
+            - area (float): Area in square pixels
+            - cell_counts (dict): Per-class counts if polygons loaded
 
         Raises:
-            MCPNotImplementedError: Not yet implemented
+            MCPToolError: If vertices invalid or no slide loaded
         """
-        raise MCPNotImplementedError("annotations.create")
+        params = {"vertices": vertices}
+        if name is not None:
+            params["name"] = name
 
-    async def roi_metrics(self, roi_id: str) -> dict[str, Any]:
+        return await self.client.call_tool("create_annotation", params)
+
+    async def list_rois(self, include_metrics: bool = False) -> list[dict[str, Any]]:
         """
-        Compute metrics for a region of interest.
-
-        TODO: Implement in PathView MCP server as 'annotations.metrics' tool
+        List all annotations/ROIs.
 
         Args:
-            roi_id: ROI identifier
+            include_metrics: Include full cell count metrics
 
         Returns:
-            Metrics dictionary (area, perimeter, cell counts, etc.)
+            List of annotation dictionaries
+        """
+        result = await self.client.call_tool("list_annotations", {
+            "include_metrics": include_metrics
+        })
+        return result["annotations"]
+
+    async def get_roi(self, roi_id: int) -> dict[str, Any]:
+        """
+        Get detailed information about a specific ROI.
+
+        Args:
+            roi_id: Annotation ID
+
+        Returns:
+            Dictionary with full annotation details including vertices
+        """
+        return await self.client.call_tool("get_annotation", {"id": roi_id})
+
+    async def delete_roi(self, roi_id: int) -> bool:
+        """
+        Delete an annotation by ID.
+
+        Args:
+            roi_id: Annotation ID
+
+        Returns:
+            True if successfully deleted
+        """
+        result = await self.client.call_tool("delete_annotation", {"id": roi_id})
+        return result.get("success", False)
+
+    async def roi_metrics(self, vertices: list[tuple[float, float]]) -> dict[str, Any]:
+        """
+        Compute metrics for arbitrary polygon vertices WITHOUT creating annotation.
+        Useful for quick probes to test different ROI boundaries.
+
+        Args:
+            vertices: Polygon vertices [(x1, y1), (x2, y2), ...] in slide coordinates
+
+        Returns:
+            Dictionary with keys:
+            - bounding_box (dict): {x, y, width, height}
+            - area (float): Area in square pixels
+            - perimeter (float): Perimeter in pixels
+            - cell_counts (dict): Per-class counts (if polygons loaded)
 
         Raises:
-            MCPNotImplementedError: Not yet implemented
+            MCPToolError: If vertices invalid or no slide loaded
         """
-        raise MCPNotImplementedError("annotations.metrics")
+        return await self.client.call_tool("compute_roi_metrics", {"vertices": vertices})
 
     async def action_card_create(
         self,
