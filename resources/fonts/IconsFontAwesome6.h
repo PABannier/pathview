@@ -20,3 +20,11 @@
 #define ICON_FA_EYE "\xef\x81\xae"                       // U+F06E - eye
 #define ICON_FA_EYE_SLASH "\xef\x81\xb0"                  // U+F070 - eye-slash
 #define ICON_FA_CROSSHAIRS "\xef\x81\x9b"                 // U+F05B - crosshairs
+
+// Action card status icons
+#define ICON_FA_CIRCLE "\xef\x84\x91"                    // U+F111 - circle
+#define ICON_FA_SPINNER "\xef\x84\x90"                   // U+F110 - spinner
+#define ICON_FA_CHECK_CIRCLE "\xef\x81\x98"              // U+F058 - check-circle
+#define ICON_FA_TIMES_CIRCLE "\xef\x81\x97"              // U+F057 - times-circle
+#define ICON_FA_BAN "\xef\x81\x9e"                       // U+F05E - ban
+#define ICON_FA_LOCK "\xef\x80\xa3"                      // U+F023 - lock

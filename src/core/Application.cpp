@@ -835,6 +835,12 @@ void Application::RenderSidebar() {
                 ImGui::EndTabItem();
             }
 
+            // Tab 4: Action Cards
+            if (ImGui::BeginTabItem("Action Cards")) {
+                RenderActionCardsTab();
+                ImGui::EndTabItem();
+            }
+
             ImGui::EndTabBar();
         }
     }
@@ -975,6 +981,160 @@ void Application::RenderPolygonTab() {
         ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f),
                           "No polygons loaded");
         ImGui::Text("Use File -> Load Polygons...");
+    }
+}
+
+void Application::RenderActionCardsTab() {
+    std::lock_guard<std::mutex> lock(actionCardsMutex_);
+
+    if (actionCards_.empty()) {
+        // Empty state
+        ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f),
+                          "No action cards");
+        ImGui::Spacing();
+        ImGui::TextWrapped("Action cards will appear here when an AI agent "
+                          "performs tasks via the MCP interface.");
+        return;
+    }
+
+    // Render cards in reverse chronological order (newest first)
+    for (auto it = actionCards_.rbegin(); it != actionCards_.rend(); ++it) {
+        const auto& card = *it;
+
+        // Card header with colored status indicator
+        ImGui::PushID(card.id.c_str());
+
+        // Status icon and color
+        ImVec4 statusColor;
+        const char* statusIcon;
+        switch (card.status) {
+            case pathview::ActionCardStatus::PENDING:
+                statusColor = ImVec4(0.7f, 0.7f, 0.7f, 1.0f);
+                statusIcon = ICON_FA_CIRCLE;
+                break;
+            case pathview::ActionCardStatus::IN_PROGRESS:
+                statusColor = ImVec4(0.3f, 0.7f, 1.0f, 1.0f);
+                statusIcon = ICON_FA_SPINNER;
+                break;
+            case pathview::ActionCardStatus::COMPLETED:
+                statusColor = ImVec4(0.3f, 0.9f, 0.3f, 1.0f);
+                statusIcon = ICON_FA_CHECK_CIRCLE;
+                break;
+            case pathview::ActionCardStatus::FAILED:
+                statusColor = ImVec4(0.9f, 0.3f, 0.3f, 1.0f);
+                statusIcon = ICON_FA_TIMES_CIRCLE;
+                break;
+            case pathview::ActionCardStatus::CANCELLED:
+                statusColor = ImVec4(0.8f, 0.6f, 0.2f, 1.0f);
+                statusIcon = ICON_FA_BAN;
+                break;
+        }
+
+        // Card container
+        ImGui::BeginChild(("card_" + card.id).c_str(),
+                         ImVec2(0, 0), true,
+                         ImGuiWindowFlags_AlwaysAutoResize);
+
+        // Title row
+        ImGui::TextColored(statusColor, "%s", statusIcon);
+        ImGui::SameLine();
+        ImGui::PushFont(fontMedium_);
+        ImGui::Text("%s", card.title.c_str());
+        ImGui::PopFont();
+
+        // Status and owner
+        ImGui::Text("Status: %s",
+                   pathview::ActionCard::StatusToString(card.status).c_str());
+        if (!card.ownerUUID.empty()) {
+            ImGui::Text("Owner: %.8s...", card.ownerUUID.c_str());
+
+            // Show linkage to current lock
+            if (navLock_->IsLocked() &&
+                navLock_->GetOwnerUUID() == card.ownerUUID) {
+                ImGui::SameLine();
+                ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.2f, 1.0f),
+                                  ICON_FA_LOCK " (Active Lock)");
+            }
+        }
+
+        // Summary
+        if (!card.summary.empty()) {
+            ImGui::Separator();
+            ImGui::TextWrapped("%s", card.summary.c_str());
+        }
+
+        // Collapsible reasoning section
+        if (!card.reasoning.empty()) {
+            ImGui::Separator();
+            if (ImGui::CollapsingHeader("Reasoning",
+                                       ImGuiTreeNodeFlags_None)) {
+                ImGui::PushStyleColor(ImGuiCol_Text,
+                                     ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
+                ImGui::TextWrapped("%s", card.reasoning.c_str());
+                ImGui::PopStyleColor();
+            }
+        }
+
+        // Log entries
+        if (!card.logEntries.empty()) {
+            ImGui::Separator();
+            if (ImGui::CollapsingHeader("Activity Log",
+                                       ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::BeginChild(("log_" + card.id).c_str(),
+                                 ImVec2(0, 150), true);
+
+                for (const auto& entry : card.logEntries) {
+                    // Timestamp
+                    auto time_t = std::chrono::system_clock::to_time_t(
+                        entry.timestamp);
+                    struct tm* tm = std::localtime(&time_t);
+                    char timeBuf[32];
+                    strftime(timeBuf, sizeof(timeBuf), "%H:%M:%S", tm);
+
+                    // Level color
+                    ImVec4 levelColor;
+                    if (entry.level == "error") {
+                        levelColor = ImVec4(0.9f, 0.3f, 0.3f, 1.0f);
+                    } else if (entry.level == "warning") {
+                        levelColor = ImVec4(0.9f, 0.7f, 0.2f, 1.0f);
+                    } else if (entry.level == "success") {
+                        levelColor = ImVec4(0.3f, 0.9f, 0.3f, 1.0f);
+                    } else {
+                        levelColor = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
+                    }
+
+                    ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f),
+                                      "[%s]", timeBuf);
+                    ImGui::SameLine();
+                    ImGui::TextColored(levelColor, "%s", entry.message.c_str());
+                }
+
+                // Auto-scroll to bottom on new entries
+                if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()) {
+                    ImGui::SetScrollHereY(1.0f);
+                }
+
+                ImGui::EndChild();
+            }
+        }
+
+        // Timestamps
+        ImGui::Separator();
+        auto created = std::chrono::system_clock::to_time_t(card.createdAt);
+        auto updated = std::chrono::system_clock::to_time_t(card.updatedAt);
+        struct tm* tmCreated = std::localtime(&created);
+        struct tm* tmUpdated = std::localtime(&updated);
+        char createdBuf[64], updatedBuf[64];
+        strftime(createdBuf, sizeof(createdBuf), "%Y-%m-%d %H:%M:%S", tmCreated);
+        strftime(updatedBuf, sizeof(updatedBuf), "%Y-%m-%d %H:%M:%S", tmUpdated);
+
+        ImGui::Text("Created: %s", createdBuf);
+        ImGui::Text("Updated: %s", updatedBuf);
+
+        ImGui::EndChild();
+
+        ImGui::PopID();
+        ImGui::Spacing();
     }
 }
 
@@ -1705,6 +1865,156 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
                 {"area", metrics.area},
                 {"perimeter", metrics.perimeter},
                 {"cell_counts", cellCountsJson}
+            };
+        }
+
+        // Action card commands
+        else if (method == "action_card.create") {
+            std::string title = params.at("title").get<std::string>();
+            std::string summary = params.value("summary", "");
+            std::string reasoning = params.value("reasoning", "");
+            std::string ownerUUID = params.value("owner_uuid", "");
+
+            // Generate UUID
+            std::string cardId = GenerateUUID();
+
+            // Create card
+            pathview::ActionCard card(cardId, title);
+            card.summary = summary;
+            card.reasoning = reasoning;
+            card.ownerUUID = ownerUUID;
+
+            // Store (thread-safe)
+            {
+                std::lock_guard<std::mutex> lock(actionCardsMutex_);
+
+                // Enforce max cards limit
+                if (actionCards_.size() >= MAX_ACTION_CARDS) {
+                    // Remove oldest completed/failed/cancelled card
+                    auto it = std::find_if(actionCards_.begin(), actionCards_.end(),
+                        [](const pathview::ActionCard& c) {
+                            return c.status == pathview::ActionCardStatus::COMPLETED ||
+                                   c.status == pathview::ActionCardStatus::FAILED ||
+                                   c.status == pathview::ActionCardStatus::CANCELLED;
+                        });
+                    if (it != actionCards_.end()) {
+                        actionCards_.erase(it);
+                    }
+                }
+
+                actionCards_.push_back(card);
+            }
+
+            std::cout << "Action card created: " << title << " (id: " << cardId << ")" << std::endl;
+
+            return json{
+                {"id", cardId},
+                {"title", title},
+                {"status", pathview::ActionCard::StatusToString(card.status)},
+                {"created_at", std::chrono::duration_cast<std::chrono::milliseconds>(
+                    card.createdAt.time_since_epoch()).count()}
+            };
+        }
+        else if (method == "action_card.update") {
+            std::string cardId = params.at("id").get<std::string>();
+
+            std::lock_guard<std::mutex> lock(actionCardsMutex_);
+
+            // Find card
+            auto it = std::find_if(actionCards_.begin(), actionCards_.end(),
+                [&cardId](const pathview::ActionCard& c) { return c.id == cardId; });
+
+            if (it == actionCards_.end()) {
+                throw std::runtime_error("Action card not found: " + cardId);
+            }
+
+            // Update fields
+            if (params.contains("status")) {
+                std::string statusStr = params["status"].get<std::string>();
+                it->UpdateStatus(pathview::ActionCard::StringToStatus(statusStr));
+            }
+            if (params.contains("summary")) {
+                it->summary = params["summary"].get<std::string>();
+                it->updatedAt = std::chrono::system_clock::now();
+            }
+            if (params.contains("reasoning")) {
+                it->reasoning = params["reasoning"].get<std::string>();
+                it->updatedAt = std::chrono::system_clock::now();
+            }
+
+            return json{
+                {"id", it->id},
+                {"status", pathview::ActionCard::StatusToString(it->status)},
+                {"updated_at", std::chrono::duration_cast<std::chrono::milliseconds>(
+                    it->updatedAt.time_since_epoch()).count()}
+            };
+        }
+        else if (method == "action_card.append_log") {
+            std::string cardId = params.at("id").get<std::string>();
+            std::string message = params.at("message").get<std::string>();
+            std::string level = params.value("level", "info");
+
+            std::lock_guard<std::mutex> lock(actionCardsMutex_);
+
+            // Find card
+            auto it = std::find_if(actionCards_.begin(), actionCards_.end(),
+                [&cardId](const pathview::ActionCard& c) { return c.id == cardId; });
+
+            if (it == actionCards_.end()) {
+                throw std::runtime_error("Action card not found: " + cardId);
+            }
+
+            // Append log
+            it->AppendLog(message, level);
+
+            return json{
+                {"id", it->id},
+                {"log_count", it->logEntries.size()},
+                {"updated_at", std::chrono::duration_cast<std::chrono::milliseconds>(
+                    it->updatedAt.time_since_epoch()).count()}
+            };
+        }
+        else if (method == "action_card.list") {
+            std::lock_guard<std::mutex> lock(actionCardsMutex_);
+
+            json cardsJson = json::array();
+            for (const auto& card : actionCards_) {
+                cardsJson.push_back({
+                    {"id", card.id},
+                    {"title", card.title},
+                    {"status", pathview::ActionCard::StatusToString(card.status)},
+                    {"summary", card.summary},
+                    {"owner_uuid", card.ownerUUID},
+                    {"log_entry_count", card.logEntries.size()},
+                    {"created_at", std::chrono::duration_cast<std::chrono::milliseconds>(
+                        card.createdAt.time_since_epoch()).count()},
+                    {"updated_at", std::chrono::duration_cast<std::chrono::milliseconds>(
+                        card.updatedAt.time_since_epoch()).count()}
+                });
+            }
+
+            return json{
+                {"cards", cardsJson},
+                {"count", actionCards_.size()}
+            };
+        }
+        else if (method == "action_card.delete") {
+            std::string cardId = params.at("id").get<std::string>();
+
+            std::lock_guard<std::mutex> lock(actionCardsMutex_);
+
+            auto it = std::find_if(actionCards_.begin(), actionCards_.end(),
+                [&cardId](const pathview::ActionCard& c) { return c.id == cardId; });
+
+            if (it == actionCards_.end()) {
+                throw std::runtime_error("Action card not found: " + cardId);
+            }
+
+            actionCards_.erase(it);
+
+            return json{
+                {"success", true},
+                {"deleted_id", cardId}
             };
         }
 

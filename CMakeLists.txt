@@ -68,6 +68,7 @@ set(IMGUI_SOURCES
 set(APP_SOURCES
     src/core/main.cpp
     src/core/Application.cpp
+    src/core/ActionCard.cpp
     src/core/UIStyle.cpp
     src/core/SlideLoader.cpp
     src/core/Viewport.cpp

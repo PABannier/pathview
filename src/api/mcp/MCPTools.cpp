@@ -285,6 +285,42 @@ static ::mcp::json SendIPCRequest(const std::string& method, const ::mcp::json& 
     return SendIPCRequest("annotations.compute_metrics", params);
 }
 
+::mcp::json HandleCreateActionCard(const ::mcp::json& params, const std::string&) {
+    if (!params.contains("title")) {
+        throw ::mcp::mcp_exception(::mcp::error_code::invalid_params,
+                                    "Missing 'title' parameter");
+    }
+    return SendIPCRequest("action_card.create", params);
+}
+
+::mcp::json HandleUpdateActionCard(const ::mcp::json& params, const std::string&) {
+    if (!params.contains("id")) {
+        throw ::mcp::mcp_exception(::mcp::error_code::invalid_params,
+                                    "Missing 'id' parameter");
+    }
+    return SendIPCRequest("action_card.update", params);
+}
+
+::mcp::json HandleAppendActionCardLog(const ::mcp::json& params, const std::string&) {
+    if (!params.contains("id") || !params.contains("message")) {
+        throw ::mcp::mcp_exception(::mcp::error_code::invalid_params,
+                                    "Missing 'id' or 'message' parameter");
+    }
+    return SendIPCRequest("action_card.append_log", params);
+}
+
+::mcp::json HandleListActionCards(const ::mcp::json&, const std::string&) {
+    return SendIPCRequest("action_card.list", ::mcp::json::object());
+}
+
+::mcp::json HandleDeleteActionCard(const ::mcp::json& params, const std::string&) {
+    if (!params.contains("id")) {
+        throw ::mcp::mcp_exception(::mcp::error_code::invalid_params,
+                                    "Missing 'id' parameter");
+    }
+    return SendIPCRequest("action_card.delete", params);
+}
+
 } // namespace tools
 } // namespace mcp
 } // namespace pathview

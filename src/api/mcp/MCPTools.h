@@ -66,6 +66,13 @@ void Initialize(ipc::IPCClient* ipcClient,
 ::mcp::json HandleDeleteAnnotation(const ::mcp::json& params, const std::string& sessionId);
 ::mcp::json HandleComputeROIMetrics(const ::mcp::json& params, const std::string& sessionId);
 
+// Action card tools
+::mcp::json HandleCreateActionCard(const ::mcp::json& params, const std::string& sessionId);
+::mcp::json HandleUpdateActionCard(const ::mcp::json& params, const std::string& sessionId);
+::mcp::json HandleAppendActionCardLog(const ::mcp::json& params, const std::string& sessionId);
+::mcp::json HandleListActionCards(const ::mcp::json& params, const std::string& sessionId);
+::mcp::json HandleDeleteActionCard(const ::mcp::json& params, const std::string& sessionId);
+
 } // namespace tools
 } // namespace mcp
 } // namespace pathview

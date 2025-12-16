@@ -189,7 +189,45 @@ void MCPServer::RegisterTools() {
         .build();
     server_->register_tool(compute_roi_metrics, tools::HandleComputeROIMetrics);
 
-    std::cout << "Registered " << 22 << " MCP tools" << std::endl;
+    // Action card tools
+    ::mcp::tool create_action_card = ::mcp::tool_builder("create_action_card")
+        .with_description("Create a new action card to track AI task progress")
+        .with_string_param("title", "Short title for the action")
+        .with_string_param("summary", "Brief description (optional)", false)
+        .with_string_param("reasoning", "Detailed reasoning (optional)", false)
+        .with_string_param("owner_uuid", "UUID of creating agent (optional)", false)
+        .build();
+    server_->register_tool(create_action_card, tools::HandleCreateActionCard);
+
+    ::mcp::tool update_action_card = ::mcp::tool_builder("update_action_card")
+        .with_description("Update action card status or content")
+        .with_string_param("id", "Action card ID")
+        .with_string_param("status", "New status: pending, in_progress, completed, failed, cancelled (optional)", false)
+        .with_string_param("summary", "Updated summary (optional)", false)
+        .with_string_param("reasoning", "Updated reasoning (optional)", false)
+        .build();
+    server_->register_tool(update_action_card, tools::HandleUpdateActionCard);
+
+    ::mcp::tool append_action_card_log = ::mcp::tool_builder("append_action_card_log")
+        .with_description("Append a log entry to action card for incremental progress updates")
+        .with_string_param("id", "Action card ID")
+        .with_string_param("message", "Log message")
+        .with_string_param("level", "Log level: info, warning, error, success (optional, default: info)", false)
+        .build();
+    server_->register_tool(append_action_card_log, tools::HandleAppendActionCardLog);
+
+    ::mcp::tool list_action_cards = ::mcp::tool_builder("list_action_cards")
+        .with_description("List all action cards with summary information")
+        .build();
+    server_->register_tool(list_action_cards, tools::HandleListActionCards);
+
+    ::mcp::tool delete_action_card = ::mcp::tool_builder("delete_action_card")
+        .with_description("Delete an action card by ID")
+        .with_string_param("id", "Action card ID")
+        .build();
+    server_->register_tool(delete_action_card, tools::HandleDeleteActionCard);
+
+    std::cout << "Registered " << 27 << " MCP tools" << std::endl;
 }
 
 void MCPServer::Run() {
