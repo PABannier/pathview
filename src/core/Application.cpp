@@ -51,6 +51,13 @@ bool Application::IsNavigationLocked() const {
     return navLock_->IsLocked() && !navLock_->IsExpired();
 }
 
+bool Application::IsNavigationOwnedByClient(int clientFd) const {
+    if (!navLock_->IsLocked() || navLock_->IsExpired()) {
+        return true;  // No lock active, anyone can navigate
+    }
+    return navLock_->GetClientFd() == clientFd;
+}
+
 void Application::CheckLockExpiry() {
     if (navLock_->IsLocked() && navLock_->IsExpired()) {
         std::cout << "Navigation lock expired for owner: "
@@ -1146,7 +1153,16 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
         // Viewport commands
         if (method == "viewport.pan") {
             if (!viewport_) {
-                throw std::runtime_error("No slide loaded");
+                throw std::runtime_error("No slide loaded. Use load_slide tool to load a whole-slide image first.");
+            }
+
+            // Check navigation lock
+            int currentClientFd = ipcServer_ ? ipcServer_->GetCurrentClientFd() : -1;
+            if (!IsNavigationOwnedByClient(currentClientFd)) {
+                throw std::runtime_error(
+                    std::string("Navigation locked by ") + navLock_->GetOwnerUUID() +
+                    ". Use nav_lock tool to acquire control."
+                );
             }
 
             double dx = params.at("dx").get<double>();
@@ -1161,7 +1177,16 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
         }
         else if (method == "viewport.zoom") {
             if (!viewport_) {
-                throw std::runtime_error("No slide loaded");
+                throw std::runtime_error("No slide loaded. Use load_slide tool to load a whole-slide image first.");
+            }
+
+            // Check navigation lock
+            int currentClientFd = ipcServer_ ? ipcServer_->GetCurrentClientFd() : -1;
+            if (!IsNavigationOwnedByClient(currentClientFd)) {
+                throw std::runtime_error(
+                    std::string("Navigation locked by ") + navLock_->GetOwnerUUID() +
+                    ". Use nav_lock tool to acquire control."
+                );
             }
 
             double delta = params.at("delta").get<double>();
@@ -1180,7 +1205,16 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
         }
         else if (method == "viewport.zoom_at_point") {
             if (!viewport_) {
-                throw std::runtime_error("No slide loaded");
+                throw std::runtime_error("No slide loaded. Use load_slide tool to load a whole-slide image first.");
+            }
+
+            // Check navigation lock
+            int currentClientFd = ipcServer_ ? ipcServer_->GetCurrentClientFd() : -1;
+            if (!IsNavigationOwnedByClient(currentClientFd)) {
+                throw std::runtime_error(
+                    std::string("Navigation locked by ") + navLock_->GetOwnerUUID() +
+                    ". Use nav_lock tool to acquire control."
+                );
             }
 
             int screenX = params.at("screen_x").get<int>();
@@ -1199,7 +1233,16 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
         }
         else if (method == "viewport.center_on") {
             if (!viewport_) {
-                throw std::runtime_error("No slide loaded");
+                throw std::runtime_error("No slide loaded. Use load_slide tool to load a whole-slide image first.");
+            }
+
+            // Check navigation lock
+            int currentClientFd = ipcServer_ ? ipcServer_->GetCurrentClientFd() : -1;
+            if (!IsNavigationOwnedByClient(currentClientFd)) {
+                throw std::runtime_error(
+                    std::string("Navigation locked by ") + navLock_->GetOwnerUUID() +
+                    ". Use nav_lock tool to acquire control."
+                );
             }
 
             double x = params.at("x").get<double>();
@@ -1216,7 +1259,16 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
         }
         else if (method == "viewport.reset") {
             if (!viewport_) {
-                throw std::runtime_error("No slide loaded");
+                throw std::runtime_error("No slide loaded. Use load_slide tool to load a whole-slide image first.");
+            }
+
+            // Check navigation lock
+            int currentClientFd = ipcServer_ ? ipcServer_->GetCurrentClientFd() : -1;
+            if (!IsNavigationOwnedByClient(currentClientFd)) {
+                throw std::runtime_error(
+                    std::string("Navigation locked by ") + navLock_->GetOwnerUUID() +
+                    ". Use nav_lock tool to acquire control."
+                );
             }
 
             viewport_->ResetView(AnimationMode::SMOOTH);
@@ -1231,7 +1283,16 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
         }
         else if (method == "viewport.move") {
             if (!viewport_) {
-                throw std::runtime_error("No slide loaded");
+                throw std::runtime_error("No slide loaded. Use load_slide tool to load a whole-slide image first.");
+            }
+
+            // Check navigation lock
+            int currentClientFd = ipcServer_ ? ipcServer_->GetCurrentClientFd() : -1;
+            if (!IsNavigationOwnedByClient(currentClientFd)) {
+                throw std::runtime_error(
+                    std::string("Navigation locked by ") + navLock_->GetOwnerUUID() +
+                    ". Use nav_lock tool to acquire control."
+                );
             }
 
             // Parse parameters
@@ -1367,7 +1428,7 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
         }
         else if (method == "polygons.set_visibility") {
             if (!polygonOverlay_) {
-                throw std::runtime_error("No polygons loaded");
+                throw std::runtime_error("No polygons loaded. Use load_polygons tool to load cell segmentation data first.");
             }
 
             bool visible = params.at("visible").get<bool>();
@@ -1377,7 +1438,7 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
         }
         else if (method == "polygons.query") {
             if (!polygonOverlay_) {
-                throw std::runtime_error("No polygons loaded");
+                throw std::runtime_error("No polygons loaded. Use load_polygons tool to load cell segmentation data first.");
             }
 
             double x = params.at("x").get<double>();
@@ -1623,7 +1684,7 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
         else if (method == "annotations.create") {
             // Check if slide is loaded
             if (!slideLoader_) {
-                throw std::runtime_error("No slide loaded");
+                throw std::runtime_error("No slide loaded. Use load_slide tool to load a whole-slide image first.");
             }
 
             // Parse and validate vertices
@@ -1676,7 +1737,7 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
                 cellCountsJson["total"] = totalCells;
             }
 
-            return json{
+            json response = {
                 {"id", annotation->id},
                 {"name", annotation->name},
                 {"vertex_count", annotation->vertices.size()},
@@ -1689,6 +1750,13 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
                 {"area", area},
                 {"cell_counts", cellCountsJson}
             };
+
+            // Add warning if polygons not loaded
+            if (!polygonOverlay_ || polygonOverlay_->GetPolygonCount() == 0) {
+                response["warning"] = "No polygons loaded. Cell counts unavailable. Use load_polygons to enable cell counting.";
+            }
+
+            return response;
         }
         else if (method == "annotations.list") {
             // Check if slide is loaded
@@ -1820,7 +1888,7 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
         else if (method == "annotations.compute_metrics") {
             // Check if slide is loaded
             if (!slideLoader_) {
-                throw std::runtime_error("No slide loaded");
+                throw std::runtime_error("No slide loaded. Use load_slide tool to load a whole-slide image first.");
             }
 
             // Parse and validate vertices
@@ -1855,7 +1923,7 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
                 cellCountsJson["total"] = metrics.totalCells;
             }
 
-            return json{
+            json response = {
                 {"bounding_box", {
                     {"x", metrics.boundingBox.x},
                     {"y", metrics.boundingBox.y},
@@ -1866,6 +1934,13 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
                 {"perimeter", metrics.perimeter},
                 {"cell_counts", cellCountsJson}
             };
+
+            // Add warning if polygons not loaded
+            if (!polygonOverlay_ || polygonOverlay_->GetPolygonCount() == 0) {
+                response["warning"] = "No polygons loaded. Cell counts unavailable. Use load_polygons to enable cell counting.";
+            }
+
+            return response;
         }
 
         // Action card commands

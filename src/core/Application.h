@@ -79,6 +79,7 @@ private:
 
     // Navigation lock helpers
     bool IsNavigationLocked() const;
+    bool IsNavigationOwnedByClient(int clientFd) const;
     void CheckLockExpiry();
     std::string GenerateUUID() const;
 

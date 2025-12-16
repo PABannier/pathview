@@ -112,6 +112,57 @@ cmake --build build -j$(nproc)
 - **Reset View**: "View" → "Reset View"
 - **Minimap**: Click on the overview in the corner to jump to that region
 
+## AI Agent Integration
+
+PathView includes an MCP (Model Context Protocol) server that enables AI agents to programmatically control the viewer, capture screenshots, and analyze tissue regions.
+
+### Starting the MCP Server
+
+```bash
+# Terminal 1: Start PathView GUI
+./build/pathview
+
+# Terminal 2: Start MCP server
+./build/pathview-mcp
+```
+
+The MCP server exposes:
+- HTTP+SSE transport on `http://127.0.0.1:9000`
+- HTTP snapshot server on `http://127.0.0.1:8080`
+- 27 tools for agent control
+
+### Quick Start for AI Agents
+
+See [docs/AI_AGENT_GUIDE.md](docs/AI_AGENT_GUIDE.md) for complete documentation.
+
+**Essential workflow:**
+1. `agent_hello` - Connect and get session info
+2. `nav_lock` - Acquire exclusive navigation control (required!)
+3. `create_action_card` - Track progress in UI
+4. `move_camera` + `await_move` - Navigate smoothly
+5. `capture_snapshot` - Get viewport screenshot
+6. `create_annotation` - Draw ROI, get cell metrics
+7. `update_action_card` - Update progress
+8. `nav_unlock` - Release control
+
+### Tool Categories
+
+- **Session:** `agent_hello`
+- **Slide:** `load_slide`, `get_slide_info`
+- **Navigation (requires lock):** `nav_lock`, `nav_unlock`, `pan`, `zoom`, `center_on`, `move_camera`, `reset_view`
+- **Snapshots:** `capture_snapshot`, `/snapshot/{id}`, `/stream?fps=N`
+- **Polygons:** `load_polygons`, `query_polygons`, `set_polygon_visibility`
+- **Annotations/ROI:** `create_annotation`, `list_annotations`, `get_annotation`, `delete_annotation`, `compute_roi_metrics`
+- **Progress Tracking:** `create_action_card`, `update_action_card`, `append_action_card_log`, `list_action_cards`, `delete_action_card`
+
+### Key Features
+
+- **Navigation Lock:** Prevents user interference during agent analysis
+- **Smooth Camera Movement:** Animated transitions with completion tracking
+- **Live Screenshot Streaming:** MJPEG stream at up to 30 FPS
+- **Automatic Cell Counting:** ROI annotations compute per-class cell counts
+- **Progress Visualization:** Action cards show agent reasoning in UI
+
 ## Project Structure
 
 ```
