@@ -8,7 +8,7 @@ using namespace pathview::http;
 
 // Test basic snapshot addition and retrieval
 TEST(SnapshotManagerTest, AddAndGetSnapshot) {
-    SnapshotManager mgr(50);
+    SnapshotManager mgr(50, std::chrono::milliseconds(10));
 
     std::vector<uint8_t> dummyPNG = {0x89, 0x50, 0x4E, 0x47};  // PNG header
     std::string id = mgr.AddSnapshot(dummyPNG, 100, 100);
@@ -25,7 +25,7 @@ TEST(SnapshotManagerTest, AddAndGetSnapshot) {
 
 // Test LRU cache eviction
 TEST(SnapshotManagerTest, LRUEviction) {
-    SnapshotManager mgr(3);  // Max 3 snapshots
+    SnapshotManager mgr(3, std::chrono::milliseconds(10));  // Max 3 snapshots
 
     std::vector<uint8_t> dummyPNG = {1, 2, 3, 4};
 
@@ -44,7 +44,7 @@ TEST(SnapshotManagerTest, LRUEviction) {
 
 // Test cache size reporting
 TEST(SnapshotManagerTest, GetCacheSize) {
-    SnapshotManager mgr(10);
+    SnapshotManager mgr(10, std::chrono::milliseconds(10));
 
     EXPECT_EQ(mgr.GetCacheSize(), 0);
 
@@ -62,7 +62,7 @@ TEST(SnapshotManagerTest, GetCacheSize) {
 
 // Test stream buffer functionality
 TEST(SnapshotManagerTest, StreamBufferBasic) {
-    SnapshotManager mgr(50);
+    SnapshotManager mgr(50, std::chrono::milliseconds(10));
 
     std::vector<uint8_t> dummyPNG = {1, 2, 3, 4};
 
@@ -80,7 +80,7 @@ TEST(SnapshotManagerTest, StreamBufferBasic) {
 
 // Test stream buffer eviction (circular buffer with max 3 frames)
 TEST(SnapshotManagerTest, StreamBufferEviction) {
-    SnapshotManager mgr(50);
+    SnapshotManager mgr(50, std::chrono::milliseconds(10));
 
     std::vector<uint8_t> dummyPNG = {1, 2, 3, 4};
 
@@ -103,14 +103,14 @@ TEST(SnapshotManagerTest, StreamBufferEviction) {
 
 // Test empty stream buffer
 TEST(SnapshotManagerTest, EmptyStreamBuffer) {
-    SnapshotManager mgr(50);
+    SnapshotManager mgr(50, std::chrono::milliseconds(10));
 
     EXPECT_EQ(mgr.GetLatestStreamFrame(), "");
 }
 
 // Test thread safety (concurrent access)
 TEST(SnapshotManagerTest, ThreadSafety) {
-    SnapshotManager mgr(100);
+    SnapshotManager mgr(100, std::chrono::milliseconds(10));
 
     std::vector<uint8_t> dummyPNG = {1, 2, 3, 4};
 
@@ -137,7 +137,7 @@ TEST(SnapshotManagerTest, ThreadSafety) {
 
 // Test cleanup removes expired snapshots
 TEST(SnapshotManagerTest, CleanupRemovesExpired) {
-    SnapshotManager mgr(50);
+    SnapshotManager mgr(50, std::chrono::milliseconds(10));
 
     std::vector<uint8_t> dummyPNG = {1, 2, 3, 4};
 
@@ -155,7 +155,7 @@ TEST(SnapshotManagerTest, CleanupRemovesExpired) {
 
 // Test UUID generation produces valid UUIDs
 TEST(SnapshotManagerTest, UUIDGeneration) {
-    SnapshotManager mgr(50);
+    SnapshotManager mgr(50, std::chrono::milliseconds(10));
 
     std::vector<uint8_t> dummyPNG = {1, 2, 3, 4};
 

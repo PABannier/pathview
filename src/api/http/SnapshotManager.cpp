@@ -7,22 +7,33 @@
 namespace pathview {
 namespace http {
 
-SnapshotManager::SnapshotManager(size_t maxSnapshots)
+SnapshotManager::SnapshotManager(size_t maxSnapshots, std::chrono::milliseconds cleanupInterval)
     : maxSnapshots_(maxSnapshots)
+    , cleanupInterval_(cleanupInterval)
 {
     // Start cleanup thread
-    cleanupThread_ = std::thread([this]() {
-        while (running_) {
-            std::this_thread::sleep_for(std::chrono::seconds(30));
-            if (running_) {
+    if (cleanupInterval_.count() > 0) {
+        cleanupThread_ = std::thread([this]() {
+            std::unique_lock<std::mutex> lock(cleanupCvMutex_);
+            while (running_) {
+                // Sleep up to cleanupInterval_, but wake immediately on shutdown to avoid destructor stalls
+                cleanupCv_.wait_for(lock, cleanupInterval_, [this]() {
+                    return !running_;
+                });
+
+                if (!running_) break;
+
+                lock.unlock();
                 Cleanup();
+                lock.lock();
             }
-        }
-    });
+        });
+    }
 }
 
 SnapshotManager::~SnapshotManager() {
     running_ = false;
+    cleanupCv_.notify_all();
     if (cleanupThread_.joinable()) {
         cleanupThread_.join();
     }

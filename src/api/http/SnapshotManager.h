@@ -10,6 +10,7 @@
 #include <optional>
 #include <thread>
 #include <atomic>
+#include <condition_variable>
 
 namespace pathview {
 namespace http {
@@ -27,7 +28,8 @@ public:
         std::chrono::steady_clock::time_point lastAccess;
     };
 
-    explicit SnapshotManager(size_t maxSnapshots = 50);
+    explicit SnapshotManager(size_t maxSnapshots = 50,
+                             std::chrono::milliseconds cleanupInterval = std::chrono::seconds(30));
     ~SnapshotManager();
 
     /**
@@ -85,9 +87,13 @@ private:
     std::deque<std::string> streamFrameIds_;
     size_t maxStreamFrames_{3};
 
+    std::chrono::milliseconds cleanupInterval_;
+
     // Cleanup thread
     std::thread cleanupThread_;
     std::atomic<bool> running_{true};
+    std::condition_variable cleanupCv_;
+    mutable std::mutex cleanupCvMutex_;
 };
 
 } // namespace http
