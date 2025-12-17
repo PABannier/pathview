@@ -1,6 +1,7 @@
 """FastAPI application entrypoint."""
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -139,6 +140,7 @@ async def run_analysis(run_id: str, request: AnalysisRequest):
     from pathanalyze.mcp.tools import MCPTools
 
     mcp_client = None
+    action_card_id: str | None = None
 
     try:
         runs[run_id].status = "running"
@@ -150,6 +152,29 @@ async def run_analysis(run_id: str, request: AnalysisRequest):
         await mcp_client.initialize()
         mcp_tools = MCPTools(mcp_client)
 
+        # Create a PathView action card for streaming progress updates (best-effort).
+        try:
+            slide_name = Path(request.slide_path).name
+            card = await mcp_tools.create_action_card(
+                title=f"PathAnalyze: {request.task}",
+                summary=f"Slide: {slide_name}",
+                reasoning=f"Run ID: {run_id}\nTask: {request.task}",
+                owner_uuid=run_id,
+            )
+            action_card_id = str(card.get("id", ""))
+            if action_card_id:
+                await mcp_tools.update_action_card(action_card_id, status="in_progress")
+                await mcp_tools.append_action_card_log(
+                    action_card_id,
+                    message="Analysis started",
+                    level="info",
+                )
+        except Exception as e:
+            logger.info(
+                "Action card streaming not available",
+                extra={"run_id": run_id, "error": str(e)},
+            )
+
         runs[run_id].message = "Connected, starting analysis workflow"
 
         # Create initial state
@@ -159,6 +184,7 @@ async def run_analysis(run_id: str, request: AnalysisRequest):
             task=request.task,
             roi_hint=request.roi_hint,
             mcp_base_url=str(settings.mcp_base_url),
+            action_card_id=action_card_id,
             status="running"
         )
 
@@ -169,6 +195,27 @@ async def run_analysis(run_id: str, request: AnalysisRequest):
         # Update run status
         runs[run_id].status = final_state.status
         runs[run_id].message = final_state.summary or final_state.error_message or "Complete"
+
+        # Best-effort action card finalization.
+        if action_card_id:
+            try:
+                final_status = "failed" if final_state.status == "failed" else "completed"
+                await mcp_tools.update_action_card(
+                    action_card_id,
+                    status=final_status,
+                    summary=runs[run_id].message[:200] if runs[run_id].message else None,
+                    reasoning=final_state.summary or final_state.error_message,
+                )
+                await mcp_tools.append_action_card_log(
+                    action_card_id,
+                    message=runs[run_id].message or "Complete",
+                    level="error" if final_state.status == "failed" else "success",
+                )
+            except Exception as e:
+                logger.debug(
+                    "Action card finalization failed",
+                    extra={"run_id": run_id, "error": str(e)},
+                )
 
         # Store detailed state
         runs_detailed[run_id] = final_state
@@ -186,6 +233,22 @@ async def run_analysis(run_id: str, request: AnalysisRequest):
         logger.error("Analysis failed", extra={"run_id": run_id, "error": str(e)})
         runs[run_id].status = "failed"
         runs[run_id].message = str(e)
+        if mcp_client and action_card_id:
+            try:
+                mcp_tools = MCPTools(mcp_client)
+                await mcp_tools.update_action_card(
+                    action_card_id,
+                    status="failed",
+                    summary="Run failed",
+                    reasoning=str(e),
+                )
+                await mcp_tools.append_action_card_log(
+                    action_card_id,
+                    message=str(e),
+                    level="error",
+                )
+            except Exception:
+                pass
 
     finally:
         # Always close MCP connection

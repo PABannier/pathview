@@ -38,6 +38,9 @@ class AnalysisState(BaseModel):
     current_viewport: ViewportInfo | None = Field(None, description="Current viewport state")
     baseline_snapshot_url: str | None = Field(None, description="Initial view snapshot URL")
 
+    # Action card streaming (PathView UI)
+    action_card_id: str | None = Field(None, description="PathView action card ID for streaming")
+
     # ROI management
     planned_roi_vertices: list[tuple[float, float]] = Field(
         default_factory=list,
@@ -69,6 +72,60 @@ class AnalysisState(BaseModel):
 # Node Implementations
 # ============================================================================
 
+async def _safe_action_card_log(
+    state: AnalysisState,
+    mcp: MCPTools,
+    message: str,
+    level: str = "info",
+) -> None:
+    if not state.action_card_id:
+        return
+    try:
+        await mcp.append_action_card_log(
+            card_id=state.action_card_id,
+            message=message,
+            level=level,
+        )
+    except Exception as e:
+        logger.debug(
+            "Action card log append failed",
+            extra={"run_id": state.run_id, "error": str(e)},
+        )
+
+
+async def _safe_action_card_update(
+    state: AnalysisState,
+    mcp: MCPTools,
+    *,
+    status: str | None = None,
+    summary: str | None = None,
+    reasoning: str | None = None,
+) -> None:
+    if not state.action_card_id:
+        return
+    try:
+        await mcp.update_action_card(
+            card_id=state.action_card_id,
+            status=status,
+            summary=summary,
+            reasoning=reasoning,
+        )
+    except Exception as e:
+        logger.debug(
+            "Action card update failed",
+            extra={"run_id": state.run_id, "error": str(e)},
+        )
+
+
+def _format_cell_counts(cell_counts: dict[str, Any] | None) -> str:
+    if not cell_counts:
+        return ""
+    items: list[tuple[str, Any]] = list(cell_counts.items())
+    parts = [f"{k}={v}" for k, v in items[:5]]
+    if len(items) > 5:
+        parts.append("...")
+    return ", ".join(parts)
+
 
 async def connect_node(state: AnalysisState, mcp: MCPTools) -> AnalysisState:
     """
@@ -78,6 +135,7 @@ async def connect_node(state: AnalysisState, mcp: MCPTools) -> AnalysisState:
     and retrieving initial viewport information.
     """
     try:
+        await _safe_action_card_log(state, mcp, "Connecting to PathView and loading slide…")
         logger.info("Connecting and loading slide", extra={"run_id": state.run_id})
 
         # Load slide
@@ -110,6 +168,18 @@ async def connect_node(state: AnalysisState, mcp: MCPTools) -> AnalysisState:
             }
         )
 
+        await _safe_action_card_update(
+            state,
+            mcp,
+            summary=f"Slide loaded: {slide_info.width}×{slide_info.height}",
+        )
+        await _safe_action_card_log(
+            state,
+            mcp,
+            f"Slide loaded ({slide_info.width}×{slide_info.height}, {slide_info.levels} levels).",
+            level="success",
+        )
+
         return state.model_copy(update={
             "slide_info": slide_info,
             "current_viewport": viewport,
@@ -118,6 +188,8 @@ async def connect_node(state: AnalysisState, mcp: MCPTools) -> AnalysisState:
         })
 
     except MCPException as e:
+        await _safe_action_card_log(state, mcp, f"Connect failed: {e.message}", level="error")
+        await _safe_action_card_update(state, mcp, status="failed")
         logger.error(
             f"Connect failed: {e.message}",
             extra={"run_id": state.run_id, "retryable": e.retryable}
@@ -129,6 +201,8 @@ async def connect_node(state: AnalysisState, mcp: MCPTools) -> AnalysisState:
         })
 
     except Exception as e:
+        await _safe_action_card_log(state, mcp, f"Unexpected connect error: {e}", level="error")
+        await _safe_action_card_update(state, mcp, status="failed")
         logger.error(
             f"Unexpected error in connect: {e}",
             extra={"run_id": state.run_id}
@@ -148,6 +222,13 @@ async def acquire_lock_node(state: AnalysisState, mcp: MCPTools) -> AnalysisStat
     mock token if the lock tool is not implemented.
     """
     try:
+        if state.status == "failed":
+            await _safe_action_card_log(
+                state, mcp, "Skipping navigation lock (run already failed).", level="warning"
+            )
+            return state.model_copy(update={"current_step": "acquire_lock"})
+
+        await _safe_action_card_log(state, mcp, "Acquiring navigation lock…")
         logger.info("Acquiring navigation lock", extra={"run_id": state.run_id})
 
         try:
@@ -174,6 +255,13 @@ async def acquire_lock_node(state: AnalysisState, mcp: MCPTools) -> AnalysisStat
             "result": {"token": token, "mocked": is_mocked}
         })
 
+        await _safe_action_card_log(
+            state,
+            mcp,
+            "Navigation lock acquired." if not is_mocked else "Navigation lock mocked (tool not available).",
+            level="success" if not is_mocked else "warning",
+        )
+
         return state.model_copy(update={
             "lock_token": token,
             "lock_acquired": True,
@@ -181,6 +269,8 @@ async def acquire_lock_node(state: AnalysisState, mcp: MCPTools) -> AnalysisStat
         })
 
     except MCPException as e:
+        await _safe_action_card_log(state, mcp, f"Lock acquisition failed: {e.message}", level="error")
+        await _safe_action_card_update(state, mcp, status="failed")
         logger.error(
             f"Lock acquisition failed: {e.message}",
             extra={"run_id": state.run_id}
@@ -192,6 +282,8 @@ async def acquire_lock_node(state: AnalysisState, mcp: MCPTools) -> AnalysisStat
         })
 
     except Exception as e:
+        await _safe_action_card_log(state, mcp, f"Unexpected lock error: {e}", level="error")
+        await _safe_action_card_update(state, mcp, status="failed")
         logger.error(
             f"Unexpected error in acquire_lock: {e}",
             extra={"run_id": state.run_id}
@@ -211,6 +303,13 @@ async def baseline_view_node(state: AnalysisState, mcp: MCPTools) -> AnalysisSta
     baseline snapshot for reference.
     """
     try:
+        if state.status == "failed":
+            await _safe_action_card_log(
+                state, mcp, "Skipping baseline view (run already failed).", level="warning"
+            )
+            return state.model_copy(update={"current_step": "baseline_view"})
+
+        await _safe_action_card_log(state, mcp, "Resetting to baseline view…")
         logger.info("Resetting to baseline view", extra={"run_id": state.run_id})
 
         # Reset view to fit entire slide
@@ -234,6 +333,15 @@ async def baseline_view_node(state: AnalysisState, mcp: MCPTools) -> AnalysisSta
                 extra={"run_id": state.run_id, "error": str(e)}
             )
 
+        if snapshot_url:
+            await _safe_action_card_log(
+                state, mcp, f"Baseline snapshot: {snapshot_url}", level="info"
+            )
+        else:
+            await _safe_action_card_log(
+                state, mcp, "Baseline snapshot not available.", level="warning"
+            )
+
         state.steps_log.append({
             "step": "baseline_view",
             "timestamp": datetime.utcnow().isoformat(),
@@ -250,6 +358,8 @@ async def baseline_view_node(state: AnalysisState, mcp: MCPTools) -> AnalysisSta
         })
 
     except MCPException as e:
+        await _safe_action_card_log(state, mcp, f"Baseline view failed: {e.message}", level="error")
+        await _safe_action_card_update(state, mcp, status="failed")
         logger.error(
             f"Baseline view failed: {e.message}",
             extra={"run_id": state.run_id}
@@ -261,6 +371,8 @@ async def baseline_view_node(state: AnalysisState, mcp: MCPTools) -> AnalysisSta
         })
 
     except Exception as e:
+        await _safe_action_card_log(state, mcp, f"Unexpected baseline error: {e}", level="error")
+        await _safe_action_card_update(state, mcp, status="failed")
         logger.error(
             f"Unexpected error in baseline_view: {e}",
             extra={"run_id": state.run_id}
@@ -280,6 +392,13 @@ async def survey_node(state: AnalysisState, mcp: MCPTools) -> AnalysisState:
     provide a closer view of the tissue.
     """
     try:
+        if state.status == "failed":
+            await _safe_action_card_log(
+                state, mcp, "Skipping survey (run already failed).", level="warning"
+            )
+            return state.model_copy(update={"current_step": "survey"})
+
+        await _safe_action_card_log(state, mcp, "Surveying slide (move to center, 2× zoom)…")
         logger.info("Surveying slide", extra={"run_id": state.run_id})
 
         if not state.slide_info:
@@ -318,12 +437,21 @@ async def survey_node(state: AnalysisState, mcp: MCPTools) -> AnalysisState:
             }
         })
 
+        await _safe_action_card_log(
+            state,
+            mcp,
+            f"Survey complete (center=({center_x:.0f}, {center_y:.0f}), zoom=2.0).",
+            level="success",
+        )
+
         return state.model_copy(update={
             "current_viewport": viewport,
             "current_step": "survey"
         })
 
     except MCPException as e:
+        await _safe_action_card_log(state, mcp, f"Survey failed: {e.message}", level="error")
+        await _safe_action_card_update(state, mcp, status="failed")
         logger.error(
             f"Survey failed: {e.message}",
             extra={"run_id": state.run_id}
@@ -335,6 +463,8 @@ async def survey_node(state: AnalysisState, mcp: MCPTools) -> AnalysisState:
         })
 
     except Exception as e:
+        await _safe_action_card_log(state, mcp, f"Unexpected survey error: {e}", level="error")
+        await _safe_action_card_update(state, mcp, status="failed")
         logger.error(
             f"Unexpected error in survey: {e}",
             extra={"run_id": state.run_id}
@@ -354,6 +484,13 @@ async def roi_plan_node(state: AnalysisState, mcp: MCPTools) -> AnalysisState:
     or a default heuristic (center of slide).
     """
     try:
+        if state.status == "failed":
+            await _safe_action_card_log(
+                state, mcp, "Skipping ROI planning (run already failed).", level="warning"
+            )
+            return state.model_copy(update={"current_step": "roi_plan"})
+
+        await _safe_action_card_log(state, mcp, "Planning ROI…")
         logger.info("Planning ROI location", extra={"run_id": state.run_id})
 
         if not state.slide_info:
@@ -397,12 +534,21 @@ async def roi_plan_node(state: AnalysisState, mcp: MCPTools) -> AnalysisState:
             }
         })
 
+        await _safe_action_card_log(
+            state,
+            mcp,
+            f"ROI planned (center=({center_x:.0f}, {center_y:.0f}), size={size}).",
+            level="info",
+        )
+
         return state.model_copy(update={
             "planned_roi_vertices": vertices,
             "current_step": "roi_plan"
         })
 
     except Exception as e:
+        await _safe_action_card_log(state, mcp, f"ROI planning failed: {e}", level="error")
+        await _safe_action_card_update(state, mcp, status="failed")
         logger.error(
             f"Unexpected error in roi_plan: {e}",
             extra={"run_id": state.run_id}
@@ -422,6 +568,13 @@ async def draw_roi_node(state: AnalysisState, mcp: MCPTools) -> AnalysisState:
     metrics for the region of interest.
     """
     try:
+        if state.status == "failed":
+            await _safe_action_card_log(
+                state, mcp, "Skipping ROI drawing (run already failed).", level="warning"
+            )
+            return state.model_copy(update={"current_step": "draw_roi"})
+
+        await _safe_action_card_log(state, mcp, "Creating ROI annotation and computing metrics…")
         logger.info("Drawing ROI and computing metrics", extra={"run_id": state.run_id})
 
         if not state.planned_roi_vertices:
@@ -460,6 +613,12 @@ async def draw_roi_node(state: AnalysisState, mcp: MCPTools) -> AnalysisState:
             }
         })
 
+        cell_counts_text = _format_cell_counts(metrics.get("cell_counts"))
+        msg = f"ROI {roi_id} created."
+        if cell_counts_text:
+            msg += f" Cell counts: {cell_counts_text}"
+        await _safe_action_card_log(state, mcp, msg, level="success")
+
         return state.model_copy(update={
             "roi_ids": state.roi_ids + [roi_id],
             "roi_metrics": state.roi_metrics + [metrics],
@@ -467,6 +626,8 @@ async def draw_roi_node(state: AnalysisState, mcp: MCPTools) -> AnalysisState:
         })
 
     except MCPException as e:
+        await _safe_action_card_log(state, mcp, f"ROI creation failed: {e.message}", level="error")
+        await _safe_action_card_update(state, mcp, status="failed")
         logger.error(
             f"ROI creation failed: {e.message}",
             extra={"run_id": state.run_id}
@@ -478,6 +639,8 @@ async def draw_roi_node(state: AnalysisState, mcp: MCPTools) -> AnalysisState:
         })
 
     except Exception as e:
+        await _safe_action_card_log(state, mcp, f"Unexpected ROI error: {e}", level="error")
+        await _safe_action_card_update(state, mcp, status="failed")
         logger.error(
             f"Unexpected error in draw_roi: {e}",
             extra={"run_id": state.run_id}
@@ -497,6 +660,13 @@ async def summarize_node(state: AnalysisState, mcp: MCPTools) -> AnalysisState:
     slide information, ROI details, and cell counting metrics.
     """
     try:
+        if state.status == "failed":
+            await _safe_action_card_log(
+                state, mcp, "Skipping summary (run already failed).", level="warning"
+            )
+            return state.model_copy(update={"current_step": "summarize"})
+
+        await _safe_action_card_log(state, mcp, "Generating summary…")
         logger.info("Generating summary", extra={"run_id": state.run_id})
 
         # Build summary from collected data
@@ -540,6 +710,16 @@ async def summarize_node(state: AnalysisState, mcp: MCPTools) -> AnalysisState:
 
         logger.info("Analysis summarized", extra={"run_id": state.run_id})
 
+        # Keep the action card summary short; attach full details to reasoning.
+        short_summary = f"ROIs: {len(state.roi_ids)}"
+        await _safe_action_card_update(
+            state,
+            mcp,
+            summary=short_summary,
+            reasoning=summary,
+        )
+        await _safe_action_card_log(state, mcp, "Summary generated.", level="success")
+
         return state.model_copy(update={
             "summary": summary,
             "current_step": "summarize",
@@ -547,6 +727,8 @@ async def summarize_node(state: AnalysisState, mcp: MCPTools) -> AnalysisState:
         })
 
     except Exception as e:
+        await _safe_action_card_log(state, mcp, f"Summarization failed: {e}", level="error")
+        await _safe_action_card_update(state, mcp, status="failed")
         logger.error(
             f"Unexpected error in summarize: {e}",
             extra={"run_id": state.run_id}
@@ -566,6 +748,7 @@ async def release_node(state: AnalysisState, mcp: MCPTools) -> AnalysisState:
     is available for other agents or user interaction.
     """
     try:
+        await _safe_action_card_log(state, mcp, "Releasing navigation lock…")
         logger.info("Releasing navigation lock", extra={"run_id": state.run_id})
 
         # Only unlock if we actually acquired a lock
@@ -595,6 +778,17 @@ async def release_node(state: AnalysisState, mcp: MCPTools) -> AnalysisState:
 
         # If we're here due to error, preserve error status
         final_status = state.status if state.status == "failed" else "completed"
+
+        await _safe_action_card_update(state, mcp, status=final_status)
+        if final_status == "failed":
+            await _safe_action_card_log(
+                state,
+                mcp,
+                state.error_message or "Run failed.",
+                level="error",
+            )
+        else:
+            await _safe_action_card_log(state, mcp, "Run completed.", level="success")
 
         return state.model_copy(update={
             "lock_acquired": False,
@@ -739,6 +933,26 @@ async def run_graph_with_cleanup(
                 logger.error(
                     "Cleanup failed",
                     extra={"run_id": final_state.run_id, "error": str(e)}
+                )
+
+        # Best-effort finalize action card if the graph failed before release_node ran.
+        if final_state.status == "failed" and final_state.action_card_id:
+            try:
+                await mcp.update_action_card(
+                    card_id=final_state.action_card_id,
+                    status="failed",
+                    summary="Run failed",
+                    reasoning=final_state.error_message,
+                )
+                await mcp.append_action_card_log(
+                    card_id=final_state.action_card_id,
+                    message=final_state.error_message or "Run failed.",
+                    level="error",
+                )
+            except Exception as e:
+                logger.debug(
+                    "Final action card update failed",
+                    extra={"run_id": final_state.run_id, "error": str(e)},
                 )
 
     return final_state

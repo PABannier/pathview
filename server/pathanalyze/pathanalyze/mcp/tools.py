@@ -7,7 +7,7 @@ This module provides typed, domain-specific methods for calling MCP tools.
 from typing import Any
 from pathanalyze.mcp.client import MCPClient
 from pathanalyze.mcp.types import SlideInfo, PolygonInfo, ViewportInfo
-from pathanalyze.mcp.exceptions import MCPNotImplementedError
+from pathanalyze.mcp.exceptions import MCPNotImplementedError, MCPToolError
 
 
 class MCPTools:
@@ -433,7 +433,8 @@ class MCPTools:
         """
         Create a new action card for streaming updates.
 
-        TODO: Implement in PathView MCP server as 'action_card.create' tool
+        Creates an action card in PathView UI using the `create_action_card` tool,
+        and optionally transitions it to the requested status.
 
         Args:
             title: Card title
@@ -441,11 +442,15 @@ class MCPTools:
 
         Returns:
             Card ID (UUID)
-
-        Raises:
-            MCPNotImplementedError: Not yet implemented
         """
-        raise MCPNotImplementedError("action_card.create")
+        card = await self.create_action_card(title=title)
+        card_id = str(card.get("id", ""))
+        if not card_id:
+            raise MCPToolError(-32603, "create_action_card did not return an id")
+
+        if status and status != card.get("status"):
+            await self.update_action_card(card_id, status=status)
+        return card_id
 
     async def action_card_append(
         self,
@@ -456,20 +461,21 @@ class MCPTools:
         """
         Append content to an action card.
 
-        TODO: Implement in PathView MCP server as 'action_card.append' tool
+        Maps to `append_action_card_log`.
 
         Args:
             card_id: Card identifier
             text: Content to append
-            type: Content type (info, warning, error)
+            type: Content type (info, warning, error, success)
 
         Returns:
             Update confirmation
-
-        Raises:
-            MCPNotImplementedError: Not yet implemented
         """
-        raise MCPNotImplementedError("action_card.append")
+        return await self.append_action_card_log(
+            card_id=card_id,
+            message=text,
+            level=type
+        )
 
     async def action_card_update(
         self,
@@ -480,7 +486,8 @@ class MCPTools:
         """
         Update action card status or title.
 
-        TODO: Implement in PathView MCP server as 'action_card.update' tool
+        Maps to `update_action_card`. Title updates are not supported by PathView's
+        `update_action_card` tool today (only status/summary/reasoning).
 
         Args:
             card_id: Card identifier
@@ -489,8 +496,65 @@ class MCPTools:
 
         Returns:
             Update confirmation
-
-        Raises:
-            MCPNotImplementedError: Not yet implemented
         """
-        raise MCPNotImplementedError("action_card.update")
+        if title is not None:
+            raise MCPNotImplementedError("action_card.update(title)")
+        return await self.update_action_card(card_id, status=status)
+
+    # ========================================================================
+    # ACTION CARD TOOLS (implemented in PathView MCP server)
+    # ========================================================================
+
+    async def create_action_card(
+        self,
+        title: str,
+        summary: str | None = None,
+        reasoning: str | None = None,
+        owner_uuid: str | None = None,
+    ) -> dict[str, Any]:
+        """Create a new action card in PathView."""
+        params: dict[str, Any] = {"title": title}
+        if summary is not None:
+            params["summary"] = summary
+        if reasoning is not None:
+            params["reasoning"] = reasoning
+        if owner_uuid is not None:
+            params["owner_uuid"] = owner_uuid
+        return await self.client.call_tool("create_action_card", params)
+
+    async def update_action_card(
+        self,
+        card_id: str,
+        status: str | None = None,
+        summary: str | None = None,
+        reasoning: str | None = None,
+    ) -> dict[str, Any]:
+        """Update action card status and/or content."""
+        params: dict[str, Any] = {"id": card_id}
+        if status is not None:
+            params["status"] = status
+        if summary is not None:
+            params["summary"] = summary
+        if reasoning is not None:
+            params["reasoning"] = reasoning
+        return await self.client.call_tool("update_action_card", params)
+
+    async def append_action_card_log(
+        self,
+        card_id: str,
+        message: str,
+        level: str = "info",
+    ) -> dict[str, Any]:
+        """Append a log entry to an action card."""
+        return await self.client.call_tool(
+            "append_action_card_log",
+            {"id": card_id, "message": message, "level": level},
+        )
+
+    async def list_action_cards(self) -> dict[str, Any]:
+        """List all action cards."""
+        return await self.client.call_tool("list_action_cards", {})
+
+    async def delete_action_card(self, card_id: str) -> dict[str, Any]:
+        """Delete an action card by id."""
+        return await self.client.call_tool("delete_action_card", {"id": card_id})

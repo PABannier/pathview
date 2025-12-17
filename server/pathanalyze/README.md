@@ -67,6 +67,8 @@ curl -X POST http://127.0.0.1:8000/analyze \
   }'
 ```
 
+This will also create a PathView Action Card (via MCP) and stream progress logs into it while the workflow runs.
+
 Response:
 ```json
 {
@@ -175,6 +177,8 @@ pytest --cov=pathanalyze --cov-report=html
 - ✅ **query_polygons** - Query polygons in region
 - ✅ **set_polygon_visibility** - Show/hide polygons
 - ⚠️ **capture_snapshot** - Defined but not implemented
+- ✅ **create_action_card / update_action_card / append_action_card_log** - Action card progress streaming
+- ✅ **list_action_cards / delete_action_card** - Action card management
 
 ### Planned (Future PathView Tools)
 - 🚧 **agent_hello** - Register agent with server
@@ -182,7 +186,6 @@ pytest --cov=pathanalyze --cov-report=html
 - 🚧 **nav.move / nav.await_move** - Smooth camera moves
 - 🚧 **annotations.create** - Create ROI annotations
 - 🚧 **annotations.metrics** - Compute ROI metrics
-- 🚧 **action_card.*** - Streaming progress updates
 
 ## Development
 
