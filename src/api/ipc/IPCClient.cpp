@@ -7,6 +7,7 @@
 #include <iostream>
 #include <cstring>
 #include <stdexcept>
+#include <chrono>
 
 namespace pathview {
 namespace ipc {
@@ -68,11 +69,8 @@ IPCResponse IPCClient::SendRequest(const IPCRequest& request, int timeoutMs) {
     std::string requestStr = request.ToJson().dump();
     requestStr += "\n";  // Add newline delimiter
 
-    // Send request
-    ssize_t sent = send(clientFd_, requestStr.c_str(), requestStr.size(), 0);
-    if (sent < 0) {
-        throw std::runtime_error(std::string("Failed to send request: ") + strerror(errno));
-    }
+    // Send request (handle short writes)
+    SendAll(requestStr, timeoutMs);
 
     // Wait for response
     std::string responseStr = ReadResponse(timeoutMs);
@@ -86,48 +84,107 @@ IPCResponse IPCClient::SendRequest(const IPCRequest& request, int timeoutMs) {
     }
 }
 
+void IPCClient::SendAll(const std::string& data, int timeoutMs) {
+    using Clock = std::chrono::steady_clock;
+    auto deadline = Clock::now() + std::chrono::milliseconds(timeoutMs);
+
+    size_t totalSent = 0;
+    while (totalSent < data.size()) {
+        ssize_t sent = send(clientFd_, data.data() + totalSent, data.size() - totalSent, 0);
+        if (sent > 0) {
+            totalSent += static_cast<size_t>(sent);
+            continue;
+        }
+        if (sent < 0 && errno == EINTR) {
+            continue;
+        }
+        if (sent < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+            auto now = Clock::now();
+            if (now >= deadline) {
+                throw std::runtime_error("Timeout sending request");
+            }
+
+            int remainingMs = static_cast<int>(
+                std::chrono::duration_cast<std::chrono::milliseconds>(deadline - now).count()
+            );
+
+            fd_set writefds;
+            FD_ZERO(&writefds);
+            FD_SET(clientFd_, &writefds);
+
+            timeval timeout;
+            timeout.tv_sec = remainingMs / 1000;
+            timeout.tv_usec = (remainingMs % 1000) * 1000;
+
+            int activity = select(clientFd_ + 1, nullptr, &writefds, nullptr, &timeout);
+            if (activity <= 0) {
+                throw std::runtime_error("Timeout sending request");
+            }
+            continue;
+        }
+
+        throw std::runtime_error(std::string("Failed to send request: ") + strerror(errno));
+    }
+}
+
 std::string IPCClient::ReadResponse(int timeoutMs) {
-    // Set up select() for timeout
-    fd_set readfds;
-    FD_ZERO(&readfds);
-    FD_SET(clientFd_, &readfds);
+    using Clock = std::chrono::steady_clock;
+    auto deadline = Clock::now() + std::chrono::milliseconds(timeoutMs);
 
-    timeval timeout;
-    timeout.tv_sec = timeoutMs / 1000;
-    timeout.tv_usec = (timeoutMs % 1000) * 1000;
+    std::string response;
+    response.reserve(8192);
 
-    int activity = select(clientFd_ + 1, &readfds, nullptr, nullptr, &timeout);
+    while (true) {
+        // Return once we see the newline delimiter.
+        size_t newlinePos = response.find('\n');
+        if (newlinePos != std::string::npos) {
+            return response.substr(0, newlinePos);
+        }
 
-    if (activity < 0) {
-        throw std::runtime_error(std::string("Select error: ") + strerror(errno));
+        auto now = Clock::now();
+        if (now >= deadline) {
+            throw std::runtime_error("Timeout waiting for response");
+        }
+
+        int remainingMs = static_cast<int>(
+            std::chrono::duration_cast<std::chrono::milliseconds>(deadline - now).count()
+        );
+
+        fd_set readfds;
+        FD_ZERO(&readfds);
+        FD_SET(clientFd_, &readfds);
+
+        timeval timeout;
+        timeout.tv_sec = remainingMs / 1000;
+        timeout.tv_usec = (remainingMs % 1000) * 1000;
+
+        int activity = select(clientFd_ + 1, &readfds, nullptr, nullptr, &timeout);
+        if (activity < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            throw std::runtime_error(std::string("Select error: ") + strerror(errno));
+        }
+
+        if (activity == 0) {
+            throw std::runtime_error("Timeout waiting for response");
+        }
+
+        char buffer[CHUNK_SIZE];
+        ssize_t n = recv(clientFd_, buffer, sizeof(buffer), 0);
+        if (n < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            throw std::runtime_error(std::string("Failed to receive response: ") + strerror(errno));
+        }
+
+        if (n == 0) {
+            throw std::runtime_error("Connection closed by server");
+        }
+
+        response.append(buffer, buffer + n);
     }
-
-    if (activity == 0) {
-        throw std::runtime_error("Timeout waiting for response");
-    }
-
-    // Read response
-    char buffer[BUFFER_SIZE];
-    ssize_t n = recv(clientFd_, buffer, sizeof(buffer) - 1, 0);
-
-    if (n < 0) {
-        throw std::runtime_error(std::string("Failed to receive response: ") + strerror(errno));
-    }
-
-    if (n == 0) {
-        throw std::runtime_error("Connection closed by server");
-    }
-
-    buffer[n] = '\0';
-
-    // Find newline delimiter
-    std::string response(buffer);
-    size_t newlinePos = response.find('\n');
-    if (newlinePos != std::string::npos) {
-        response = response.substr(0, newlinePos);
-    }
-
-    return response;
 }
 
 } // namespace ipc

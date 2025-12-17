@@ -832,23 +832,55 @@ class TestSuite:
         self._run_test(17, 16, "Query polygons in region", test_query_polygons)
 
     def _test_snapshot_operations(self):
-        """Test snapshot capture (expect failure)"""
+        """Test snapshot capture + HTTP retrieval."""
+
         def test_capture_snapshot():
-            # This should fail with "not yet implemented"
-            try:
-                self.client.call_tool('capture_snapshot', {'width': 800, 'height': 600})
-                raise Exception("Expected snapshot to fail but it succeeded")
-            except MCPException as e:
-                # Verify it's the expected error
-                if "not yet implemented" not in e.message.lower():
-                    raise Exception(f"Unexpected error message: {e.message}")
-                if e.code != -32603:  # Internal error
-                    raise Exception(f"Unexpected error code: {e.code}")
-                return f"Failed as expected: {e.message}"
+            # Note: width/height are currently accepted but the viewer may still capture at window size.
+            result = self.client.call_tool('capture_snapshot', {'width': 800, 'height': 600})
+
+            if not isinstance(result, dict):
+                raise Exception(f"Invalid response type: {type(result)}")
+
+            for key in ("id", "url", "width", "height"):
+                if key not in result:
+                    raise Exception(f"Missing '{key}' in response: {result}")
+
+            snapshot_id = result["id"]
+            snapshot_url = result["url"]
+            width = result["width"]
+            height = result["height"]
+
+            if not isinstance(snapshot_id, str) or len(snapshot_id) < 8:
+                raise Exception(f"Invalid snapshot id: {snapshot_id!r}")
+
+            if not isinstance(snapshot_url, str) or "/snapshot/" not in snapshot_url:
+                raise Exception(f"Invalid snapshot url: {snapshot_url!r}")
+
+            if not isinstance(width, int) or width <= 0:
+                raise Exception(f"Invalid snapshot width: {width!r}")
+
+            if not isinstance(height, int) or height <= 0:
+                raise Exception(f"Invalid snapshot height: {height!r}")
+
+            # Fetch the PNG from the HTTP snapshot endpoint and validate basic properties.
+            resp = requests.get(snapshot_url, timeout=self.client.timeout)
+            if resp.status_code != 200:
+                raise Exception(f"Snapshot GET failed: HTTP {resp.status_code}: {resp.text[:200]}")
+
+            content_type = resp.headers.get("Content-Type", "")
+            if "image/png" not in content_type:
+                raise Exception(f"Unexpected Content-Type: {content_type!r}")
+
+            data = resp.content
+            png_magic = b"\x89PNG\r\n\x1a\n"
+            if len(data) < len(png_magic) or data[:8] != png_magic:
+                raise Exception("Snapshot response is not a valid PNG (missing magic header)")
+
+            return f"Snapshot OK: {snapshot_id} ({width}x{height}, {len(data)} bytes)"
 
         test_num = 14 if not self.polygon_path else 18
         self._run_test(test_num, 16 if not self.polygon_path else 18,
-                      "Capture snapshot (expect failure)", test_capture_snapshot)
+                      "Capture snapshot + fetch PNG", test_capture_snapshot)
 
     def _validate_viewport_response(self, result: Any, operation: str):
         """Validate a viewport operation response"""

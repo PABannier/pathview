@@ -104,6 +104,21 @@ static ::mcp::json SendIPCRequest(const std::string& method, const ::mcp::json& 
     // Send IPC request to capture screenshot
     ::mcp::json result = SendIPCRequest("snapshot.capture", params);
 
+    // If the GUI reported an error (returned as a normal result object), surface it cleanly.
+    if (result.contains("error")) {
+        throw ::mcp::mcp_exception(
+            ::mcp::error_code::internal_error,
+            result["error"].get<std::string>()
+        );
+    }
+
+    if (!result.contains("png_data")) {
+        throw ::mcp::mcp_exception(
+            ::mcp::error_code::internal_error,
+            "snapshot.capture response missing 'png_data'"
+        );
+    }
+
     // Decode base64 PNG data
     std::string base64 = result["png_data"].get<std::string>();
     int width = result["width"].get<int>();

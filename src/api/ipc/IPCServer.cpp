@@ -7,9 +7,57 @@
 #include <iostream>
 #include <algorithm>
 #include <cstring>
+#include <chrono>
 
 namespace pathview {
 namespace ipc {
+
+static bool SendAll(int fd, const std::string& data, int timeoutMs) {
+    using Clock = std::chrono::steady_clock;
+    auto deadline = Clock::now() + std::chrono::milliseconds(timeoutMs);
+
+    size_t totalSent = 0;
+    while (totalSent < data.size()) {
+        ssize_t sent = send(fd, data.data() + totalSent, data.size() - totalSent, 0);
+        if (sent > 0) {
+            totalSent += static_cast<size_t>(sent);
+            continue;
+        }
+
+        if (sent < 0 && errno == EINTR) {
+            continue;
+        }
+
+        if (sent < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+            auto now = Clock::now();
+            if (now >= deadline) {
+                return false;
+            }
+
+            int remainingMs = static_cast<int>(
+                std::chrono::duration_cast<std::chrono::milliseconds>(deadline - now).count()
+            );
+
+            fd_set writefds;
+            FD_ZERO(&writefds);
+            FD_SET(fd, &writefds);
+
+            timeval timeout;
+            timeout.tv_sec = remainingMs / 1000;
+            timeout.tv_usec = (remainingMs % 1000) * 1000;
+
+            int activity = select(fd + 1, nullptr, &writefds, nullptr, &timeout);
+            if (activity <= 0) {
+                return false;
+            }
+            continue;
+        }
+
+        return false;
+    }
+
+    return true;
+}
 
 IPCServer::IPCServer(CommandHandler handler)
     : handler_(std::move(handler))
@@ -201,8 +249,7 @@ void IPCServer::HandleClient(int clientFd) {
         std::string responseStr = response.ToJson().dump();
         responseStr += "\n";  // Add newline delimiter
 
-        ssize_t sent = send(clientFd, responseStr.c_str(), responseStr.size(), 0);
-        if (sent < 0) {
+        if (!SendAll(clientFd, responseStr, 5000)) {
             std::cerr << "Failed to send response: " << strerror(errno) << std::endl;
             RemoveClient(clientFd);
         }
@@ -218,7 +265,7 @@ void IPCServer::HandleClient(int clientFd) {
         };
 
         std::string responseStr = errorResponse.ToJson().dump() + "\n";
-        send(clientFd, responseStr.c_str(), responseStr.size(), 0);
+        SendAll(clientFd, responseStr, 5000);
     } catch (const std::exception& e) {
         std::cerr << "IPC error: " << e.what() << std::endl;
     }

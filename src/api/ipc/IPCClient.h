@@ -53,12 +53,13 @@ public:
 
 private:
     std::string ReadResponse(int timeoutMs);
+    void SendAll(const std::string& data, int timeoutMs);
 
     std::string socketPath_;
     int clientFd_;
     std::atomic<int> nextId_;
 
-    static constexpr int BUFFER_SIZE = 65536;  // 64KB buffer
+    static constexpr int CHUNK_SIZE = 65536;  // Read chunk size
 };
 
 } // namespace ipc

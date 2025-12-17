@@ -1611,24 +1611,18 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
             // Note: includeUI and custom width/height not yet implemented
             // Currently captures at window resolution without UI
 
-            // Request capture on next frame
-            screenshotBuffer_->RequestCapture();
-
-            // Wait for capture completion (max 2s timeout)
-            auto startTime = std::chrono::steady_clock::now();
-            while (!screenshotBuffer_->IsReady()) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
-                auto elapsed = std::chrono::steady_clock::now() - startTime;
-                if (elapsed > std::chrono::seconds(2)) {
-                    return json{{"error", "Screenshot capture timeout"}};
-                }
-            }
+            // Capture immediately.
+            //
+            // Important: IPC requests are processed on the GUI thread (via IPCServer::ProcessMessages).
+            // Waiting for "next frame" would deadlock rendering, so we read pixels from the last-rendered
+            // frame synchronously.
+            CaptureScreenshot();
 
             // Get captured data and encode PNG
             std::vector<uint8_t> pixels;
             int capturedWidth, capturedHeight;
             if (!screenshotBuffer_->GetCapture(pixels, capturedWidth, capturedHeight)) {
-                return json{{"error", "Failed to get captured screenshot"}};
+                return json{{"error", "Failed to capture screenshot"}};
             }
 
             std::vector<uint8_t> pngData = EncodePNG(pixels, capturedWidth, capturedHeight);
