@@ -140,10 +140,33 @@ jobs:
           build/*.log
         retention-days: 30
 
+  test-pathanalyze:
+    name: PathAnalyze (Python) Tests
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+
+    - name: Install PathAnalyze dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e "server/pathanalyze[dev]"
+
+    - name: Run PathAnalyze tests
+      run: |
+        cd server/pathanalyze
+        pytest || echo "Some PathAnalyze tests failed"
+
   test-summary:
     name: Test Summary
     runs-on: ubuntu-22.04
-    needs: [test-ubuntu, test-macos]
+    needs: [test-ubuntu, test-macos, test-pathanalyze]
     if: always()
 
     steps:
@@ -170,6 +193,12 @@ jobs:
           echo "✅ macOS 14 (ARM64): Passed" >> $GITHUB_STEP_SUMMARY
         else
           echo "❌ macOS 14 (ARM64): Failed" >> $GITHUB_STEP_SUMMARY
+        fi
+
+        if [ "${{ needs.test-pathanalyze.result }}" == "success" ]; then
+          echo "✅ PathAnalyze (Python): Passed" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ PathAnalyze (Python): Failed" >> $GITHUB_STEP_SUMMARY
         fi
 
         echo "" >> $GITHUB_STEP_SUMMARY

@@ -45,7 +45,7 @@ async def test_clear_error_no_polygons(mcp_client):
     """
     # Try to set polygon visibility without loading polygons
     with pytest.raises(Exception) as exc_info:
-        await mcp_client.call_tool("set_polygon_visibility", {"visible": true})
+        await mcp_client.call_tool("set_polygon_visibility", {"visible": True})
 
     error = str(exc_info.value)
     assert "polygon" in error.lower()
