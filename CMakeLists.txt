@@ -79,14 +79,14 @@ set(APP_SOURCES
     src/core/Minimap.cpp
     src/core/PolygonOverlay.cpp
     src/core/PolygonLoader.cpp
-    src/core/ProtobufPolygonLoader.cpp
-    src/core/JSONPolygonLoader.cpp
     src/core/PolygonIndex.cpp
     src/core/PolygonTriangulator.cpp
     src/core/AnnotationManager.cpp
     src/core/NavigationLock.cpp
     src/core/PNGEncoder.cpp
     src/core/ScreenshotBuffer.cpp
+    src/loaders/ProtobufPolygonLoader.cpp
+    src/loaders/JSONPolygonLoader.cpp
     protobuf/cell_polygons.pb.cc
 )
 
@@ -96,6 +96,7 @@ add_executable(pathview ${APP_SOURCES} ${IMGUI_SOURCES})
 # Include directories
 target_include_directories(pathview PRIVATE
     ${CMAKE_SOURCE_DIR}/src/core
+    ${CMAKE_SOURCE_DIR}/src/loaders
     ${CMAKE_SOURCE_DIR}/protobuf
     ${CMAKE_SOURCE_DIR}/resources/fonts
     ${IMGUI_DIR}

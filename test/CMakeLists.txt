@@ -43,6 +43,7 @@ add_executable(unit_tests
 
 target_include_directories(unit_tests PRIVATE
     ${CMAKE_SOURCE_DIR}/src/core
+    ${CMAKE_SOURCE_DIR}/src/loaders
     ${CMAKE_SOURCE_DIR}/src/api/http
     ${CMAKE_SOURCE_DIR}/protobuf
     ${CMAKE_SOURCE_DIR}/test/mocks
@@ -78,12 +79,12 @@ target_sources(unit_tests PRIVATE
     ${CMAKE_SOURCE_DIR}/src/core/TextureManager.cpp
     ${CMAKE_SOURCE_DIR}/src/core/PolygonOverlay.cpp
     ${CMAKE_SOURCE_DIR}/src/core/PolygonLoader.cpp
-    ${CMAKE_SOURCE_DIR}/src/core/ProtobufPolygonLoader.cpp
-    ${CMAKE_SOURCE_DIR}/src/core/JSONPolygonLoader.cpp
     ${CMAKE_SOURCE_DIR}/src/core/NavigationLock.cpp
     ${CMAKE_SOURCE_DIR}/src/core/PNGEncoder.cpp
     ${CMAKE_SOURCE_DIR}/src/core/ActionCard.cpp
     ${CMAKE_SOURCE_DIR}/src/api/http/SnapshotManager.cpp
+    ${CMAKE_SOURCE_DIR}/src/loaders/ProtobufPolygonLoader.cpp
+    ${CMAKE_SOURCE_DIR}/src/loaders/JSONPolygonLoader.cpp
     ${CMAKE_SOURCE_DIR}/protobuf/cell_polygons.pb.cc
 )
 
