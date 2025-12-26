@@ -271,12 +271,13 @@ void SlideRenderer::RenderFallbackTile(const TileKey& targetKey, const TileKey& 
     Vec2 topLeft = viewport.SlideToScreen(Vec2(targetX0, targetY0));
     Vec2 bottomRight = viewport.SlideToScreen(Vec2(targetX1, targetY1));
 
-    SDL_Rect dstRect = {
-        static_cast<int>(topLeft.x),
-        static_cast<int>(topLeft.y),
-        static_cast<int>(bottomRight.x - topLeft.x),
-        static_cast<int>(bottomRight.y - topLeft.y)
-    };
+    // Use floor() for start and ceil() for end to eliminate gaps between tiles
+    int x0 = static_cast<int>(std::floor(topLeft.x));
+    int y0 = static_cast<int>(std::floor(topLeft.y));
+    int x1 = static_cast<int>(std::ceil(bottomRight.x));
+    int y1 = static_cast<int>(std::ceil(bottomRight.y));
+
+    SDL_Rect dstRect = {x0, y0, x1 - x0, y1 - y0};
 
     // Render the fallback tile portion scaled up
     SDL_RenderCopy(renderer_, texture, &srcRect, &dstRect);
@@ -307,12 +308,15 @@ void SlideRenderer::RenderTileToScreen(const TileKey& key, const TileData* tileD
     Vec2 topLeft = viewport.SlideToScreen(Vec2(tileX0, tileY0));
     Vec2 bottomRight = viewport.SlideToScreen(Vec2(tileX1, tileY1));
 
-    SDL_Rect dstRect = {
-        static_cast<int>(topLeft.x),
-        static_cast<int>(topLeft.y),
-        static_cast<int>(bottomRight.x - topLeft.x),
-        static_cast<int>(bottomRight.y - topLeft.y)
-    };
+    // Use floor() for start and ceil() for end to eliminate gaps between tiles.
+    // This causes tiles to overlap by at most 1 pixel, which is invisible,
+    // whereas gaps (from truncation) appear as visible black lines.
+    int x0 = static_cast<int>(std::floor(topLeft.x));
+    int y0 = static_cast<int>(std::floor(topLeft.y));
+    int x1 = static_cast<int>(std::ceil(bottomRight.x));
+    int y1 = static_cast<int>(std::ceil(bottomRight.y));
+
+    SDL_Rect dstRect = {x0, y0, x1 - x0, y1 - y0};
 
     // Render tile
     SDL_RenderCopy(renderer_, texture, nullptr, &dstRect);
