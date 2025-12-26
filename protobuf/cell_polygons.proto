@@ -1,6 +1,6 @@
 syntax = "proto2";
 
-package histowmics;
+package DataProtoPolygon;
 
 message SegmentationPolygon {
     required int32  cell_id    = 1;

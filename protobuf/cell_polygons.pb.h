@@ -56,7 +56,7 @@ struct TableStruct_cell_5fpolygons_2eproto {
 extern "C" {
 extern const ::google::protobuf::internal::DescriptorTable descriptor_table_cell_5fpolygons_2eproto;
 }  // extern "C"
-namespace histowmics {
+namespace DataProtoPolygon {
 class SegmentationPolygon;
 struct SegmentationPolygonDefaultTypeInternal;
 extern SegmentationPolygonDefaultTypeInternal _SegmentationPolygon_default_instance_;
@@ -81,13 +81,13 @@ class TissueSegmentationMap;
 struct TissueSegmentationMapDefaultTypeInternal;
 extern TissueSegmentationMapDefaultTypeInternal _TissueSegmentationMap_default_instance_;
 extern const ::google::protobuf::internal::ClassDataFull TissueSegmentationMap_class_data_;
-}  // namespace histowmics
+}  // namespace DataProtoPolygon
 namespace google {
 namespace protobuf {
 }  // namespace protobuf
 }  // namespace google
 
-namespace histowmics {
+namespace DataProtoPolygon {
 
 // ===================================================================
 
@@ -95,7 +95,7 @@ namespace histowmics {
 // -------------------------------------------------------------------
 
 class TissueSegmentationMap final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:histowmics.TissueSegmentationMap) */ {
+/* @@protoc_insertion_point(class_definition:DataProtoPolygon.TissueSegmentationMap) */ {
  public:
   inline TissueSegmentationMap() : TissueSegmentationMap(nullptr) {}
   ~TissueSegmentationMap() PROTOBUF_FINAL;
@@ -218,7 +218,7 @@ class TissueSegmentationMap final : public ::google::protobuf::Message
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "histowmics.TissueSegmentationMap"; }
+  static ::absl::string_view FullMessageName() { return "DataProtoPolygon.TissueSegmentationMap"; }
 
  protected:
   explicit TissueSegmentationMap(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
@@ -301,12 +301,12 @@ class TissueSegmentationMap final : public ::google::protobuf::Message
   void _internal_set_height(::int32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:histowmics.TissueSegmentationMap)
+  // @@protoc_insertion_point(class_scope:DataProtoPolygon.TissueSegmentationMap)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<2, 4,
-                                   0, 46,
+                                   0, 52,
                                    2>
       _table_;
 
@@ -366,7 +366,7 @@ class SlideSegmentationData_TissueClassMappingEntry_DoNotUse final
 
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<1, 2,
-                                   0, 70,
+                                   0, 76,
                                    2>
       _table_;
 
@@ -380,7 +380,7 @@ extern const ::google::protobuf::internal::ClassDataFull SlideSegmentationData_T
 // -------------------------------------------------------------------
 
 class SegmentationPolygon_Point final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:histowmics.SegmentationPolygon.Point) */ {
+/* @@protoc_insertion_point(class_definition:DataProtoPolygon.SegmentationPolygon.Point) */ {
  public:
   inline SegmentationPolygon_Point() : SegmentationPolygon_Point(nullptr) {}
   ~SegmentationPolygon_Point() PROTOBUF_FINAL;
@@ -503,7 +503,7 @@ class SegmentationPolygon_Point final : public ::google::protobuf::Message
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "histowmics.SegmentationPolygon.Point"; }
+  static ::absl::string_view FullMessageName() { return "DataProtoPolygon.SegmentationPolygon.Point"; }
 
  protected:
   explicit SegmentationPolygon_Point(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
@@ -552,7 +552,7 @@ class SegmentationPolygon_Point final : public ::google::protobuf::Message
   void _internal_set_y(float value);
 
   public:
-  // @@protoc_insertion_point(class_scope:histowmics.SegmentationPolygon.Point)
+  // @@protoc_insertion_point(class_scope:DataProtoPolygon.SegmentationPolygon.Point)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
@@ -590,7 +590,7 @@ extern const ::google::protobuf::internal::ClassDataFull SegmentationPolygon_Poi
 // -------------------------------------------------------------------
 
 class SegmentationPolygon final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:histowmics.SegmentationPolygon) */ {
+/* @@protoc_insertion_point(class_definition:DataProtoPolygon.SegmentationPolygon) */ {
  public:
   inline SegmentationPolygon() : SegmentationPolygon(nullptr) {}
   ~SegmentationPolygon() PROTOBUF_FINAL;
@@ -713,7 +713,7 @@ class SegmentationPolygon final : public ::google::protobuf::Message
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "histowmics.SegmentationPolygon"; }
+  static ::absl::string_view FullMessageName() { return "DataProtoPolygon.SegmentationPolygon"; }
 
  protected:
   explicit SegmentationPolygon(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
@@ -744,23 +744,23 @@ class SegmentationPolygon final : public ::google::protobuf::Message
     kCellIdFieldNumber = 1,
     kConfidenceFieldNumber = 3,
   };
-  // repeated .histowmics.SegmentationPolygon.Point coordinates = 4;
+  // repeated .DataProtoPolygon.SegmentationPolygon.Point coordinates = 4;
   int coordinates_size() const;
   private:
   int _internal_coordinates_size() const;
 
   public:
   void clear_coordinates() ;
-  ::histowmics::SegmentationPolygon_Point* PROTOBUF_NONNULL mutable_coordinates(int index);
-  ::google::protobuf::RepeatedPtrField<::histowmics::SegmentationPolygon_Point>* PROTOBUF_NONNULL mutable_coordinates();
+  ::DataProtoPolygon::SegmentationPolygon_Point* PROTOBUF_NONNULL mutable_coordinates(int index);
+  ::google::protobuf::RepeatedPtrField<::DataProtoPolygon::SegmentationPolygon_Point>* PROTOBUF_NONNULL mutable_coordinates();
 
   private:
-  const ::google::protobuf::RepeatedPtrField<::histowmics::SegmentationPolygon_Point>& _internal_coordinates() const;
-  ::google::protobuf::RepeatedPtrField<::histowmics::SegmentationPolygon_Point>* PROTOBUF_NONNULL _internal_mutable_coordinates();
+  const ::google::protobuf::RepeatedPtrField<::DataProtoPolygon::SegmentationPolygon_Point>& _internal_coordinates() const;
+  ::google::protobuf::RepeatedPtrField<::DataProtoPolygon::SegmentationPolygon_Point>* PROTOBUF_NONNULL _internal_mutable_coordinates();
   public:
-  const ::histowmics::SegmentationPolygon_Point& coordinates(int index) const;
-  ::histowmics::SegmentationPolygon_Point* PROTOBUF_NONNULL add_coordinates();
-  const ::google::protobuf::RepeatedPtrField<::histowmics::SegmentationPolygon_Point>& coordinates() const;
+  const ::DataProtoPolygon::SegmentationPolygon_Point& coordinates(int index) const;
+  ::DataProtoPolygon::SegmentationPolygon_Point* PROTOBUF_NONNULL add_coordinates();
+  const ::google::protobuf::RepeatedPtrField<::DataProtoPolygon::SegmentationPolygon_Point>& coordinates() const;
   // required string cell_type = 2;
   bool has_cell_type() const;
   void clear_cell_type() ;
@@ -777,19 +777,19 @@ class SegmentationPolygon final : public ::google::protobuf::Message
   ::std::string* PROTOBUF_NONNULL _internal_mutable_cell_type();
 
   public:
-  // required .histowmics.SegmentationPolygon.Point centroid = 5;
+  // required .DataProtoPolygon.SegmentationPolygon.Point centroid = 5;
   bool has_centroid() const;
   void clear_centroid() ;
-  const ::histowmics::SegmentationPolygon_Point& centroid() const;
-  [[nodiscard]] ::histowmics::SegmentationPolygon_Point* PROTOBUF_NULLABLE release_centroid();
-  ::histowmics::SegmentationPolygon_Point* PROTOBUF_NONNULL mutable_centroid();
-  void set_allocated_centroid(::histowmics::SegmentationPolygon_Point* PROTOBUF_NULLABLE value);
-  void unsafe_arena_set_allocated_centroid(::histowmics::SegmentationPolygon_Point* PROTOBUF_NULLABLE value);
-  ::histowmics::SegmentationPolygon_Point* PROTOBUF_NULLABLE unsafe_arena_release_centroid();
+  const ::DataProtoPolygon::SegmentationPolygon_Point& centroid() const;
+  [[nodiscard]] ::DataProtoPolygon::SegmentationPolygon_Point* PROTOBUF_NULLABLE release_centroid();
+  ::DataProtoPolygon::SegmentationPolygon_Point* PROTOBUF_NONNULL mutable_centroid();
+  void set_allocated_centroid(::DataProtoPolygon::SegmentationPolygon_Point* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_centroid(::DataProtoPolygon::SegmentationPolygon_Point* PROTOBUF_NULLABLE value);
+  ::DataProtoPolygon::SegmentationPolygon_Point* PROTOBUF_NULLABLE unsafe_arena_release_centroid();
 
   private:
-  const ::histowmics::SegmentationPolygon_Point& _internal_centroid() const;
-  ::histowmics::SegmentationPolygon_Point* PROTOBUF_NONNULL _internal_mutable_centroid();
+  const ::DataProtoPolygon::SegmentationPolygon_Point& _internal_centroid() const;
+  ::DataProtoPolygon::SegmentationPolygon_Point* PROTOBUF_NONNULL _internal_mutable_centroid();
 
   public:
   // required int32 cell_id = 1;
@@ -814,12 +814,12 @@ class SegmentationPolygon final : public ::google::protobuf::Message
   void _internal_set_confidence(float value);
 
   public:
-  // @@protoc_insertion_point(class_scope:histowmics.SegmentationPolygon)
+  // @@protoc_insertion_point(class_scope:DataProtoPolygon.SegmentationPolygon)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<3, 5,
-                                   2, 48,
+                                   2, 54,
                                    2>
       _table_;
 
@@ -840,9 +840,9 @@ class SegmentationPolygon final : public ::google::protobuf::Message
         const SegmentationPolygon& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::RepeatedPtrField< ::histowmics::SegmentationPolygon_Point > coordinates_;
+    ::google::protobuf::RepeatedPtrField< ::DataProtoPolygon::SegmentationPolygon_Point > coordinates_;
     ::google::protobuf::internal::ArenaStringPtr cell_type_;
-    ::histowmics::SegmentationPolygon_Point* PROTOBUF_NULLABLE centroid_;
+    ::DataProtoPolygon::SegmentationPolygon_Point* PROTOBUF_NULLABLE centroid_;
     ::int32_t cell_id_;
     float confidence_;
     PROTOBUF_TSAN_DECLARE_MEMBER
@@ -855,7 +855,7 @@ extern const ::google::protobuf::internal::ClassDataFull SegmentationPolygon_cla
 // -------------------------------------------------------------------
 
 class TileSegmentationData final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:histowmics.TileSegmentationData) */ {
+/* @@protoc_insertion_point(class_definition:DataProtoPolygon.TileSegmentationData) */ {
  public:
   inline TileSegmentationData() : TileSegmentationData(nullptr) {}
   ~TileSegmentationData() PROTOBUF_FINAL;
@@ -978,7 +978,7 @@ class TileSegmentationData final : public ::google::protobuf::Message
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "histowmics.TileSegmentationData"; }
+  static ::absl::string_view FullMessageName() { return "DataProtoPolygon.TileSegmentationData"; }
 
  protected:
   explicit TileSegmentationData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
@@ -1011,23 +1011,23 @@ class TileSegmentationData final : public ::google::protobuf::Message
     kWidthFieldNumber = 5,
     kHeightFieldNumber = 6,
   };
-  // repeated .histowmics.SegmentationPolygon masks = 7;
+  // repeated .DataProtoPolygon.SegmentationPolygon masks = 7;
   int masks_size() const;
   private:
   int _internal_masks_size() const;
 
   public:
   void clear_masks() ;
-  ::histowmics::SegmentationPolygon* PROTOBUF_NONNULL mutable_masks(int index);
-  ::google::protobuf::RepeatedPtrField<::histowmics::SegmentationPolygon>* PROTOBUF_NONNULL mutable_masks();
+  ::DataProtoPolygon::SegmentationPolygon* PROTOBUF_NONNULL mutable_masks(int index);
+  ::google::protobuf::RepeatedPtrField<::DataProtoPolygon::SegmentationPolygon>* PROTOBUF_NONNULL mutable_masks();
 
   private:
-  const ::google::protobuf::RepeatedPtrField<::histowmics::SegmentationPolygon>& _internal_masks() const;
-  ::google::protobuf::RepeatedPtrField<::histowmics::SegmentationPolygon>* PROTOBUF_NONNULL _internal_mutable_masks();
+  const ::google::protobuf::RepeatedPtrField<::DataProtoPolygon::SegmentationPolygon>& _internal_masks() const;
+  ::google::protobuf::RepeatedPtrField<::DataProtoPolygon::SegmentationPolygon>* PROTOBUF_NONNULL _internal_mutable_masks();
   public:
-  const ::histowmics::SegmentationPolygon& masks(int index) const;
-  ::histowmics::SegmentationPolygon* PROTOBUF_NONNULL add_masks();
-  const ::google::protobuf::RepeatedPtrField<::histowmics::SegmentationPolygon>& masks() const;
+  const ::DataProtoPolygon::SegmentationPolygon& masks(int index) const;
+  ::DataProtoPolygon::SegmentationPolygon* PROTOBUF_NONNULL add_masks();
+  const ::google::protobuf::RepeatedPtrField<::DataProtoPolygon::SegmentationPolygon>& masks() const;
   // required string tile_id = 1;
   bool has_tile_id() const;
   void clear_tile_id() ;
@@ -1044,19 +1044,19 @@ class TileSegmentationData final : public ::google::protobuf::Message
   ::std::string* PROTOBUF_NONNULL _internal_mutable_tile_id();
 
   public:
-  // required .histowmics.TissueSegmentationMap tissue_segmentation_map = 8;
+  // required .DataProtoPolygon.TissueSegmentationMap tissue_segmentation_map = 8;
   bool has_tissue_segmentation_map() const;
   void clear_tissue_segmentation_map() ;
-  const ::histowmics::TissueSegmentationMap& tissue_segmentation_map() const;
-  [[nodiscard]] ::histowmics::TissueSegmentationMap* PROTOBUF_NULLABLE release_tissue_segmentation_map();
-  ::histowmics::TissueSegmentationMap* PROTOBUF_NONNULL mutable_tissue_segmentation_map();
-  void set_allocated_tissue_segmentation_map(::histowmics::TissueSegmentationMap* PROTOBUF_NULLABLE value);
-  void unsafe_arena_set_allocated_tissue_segmentation_map(::histowmics::TissueSegmentationMap* PROTOBUF_NULLABLE value);
-  ::histowmics::TissueSegmentationMap* PROTOBUF_NULLABLE unsafe_arena_release_tissue_segmentation_map();
+  const ::DataProtoPolygon::TissueSegmentationMap& tissue_segmentation_map() const;
+  [[nodiscard]] ::DataProtoPolygon::TissueSegmentationMap* PROTOBUF_NULLABLE release_tissue_segmentation_map();
+  ::DataProtoPolygon::TissueSegmentationMap* PROTOBUF_NONNULL mutable_tissue_segmentation_map();
+  void set_allocated_tissue_segmentation_map(::DataProtoPolygon::TissueSegmentationMap* PROTOBUF_NULLABLE value);
+  void unsafe_arena_set_allocated_tissue_segmentation_map(::DataProtoPolygon::TissueSegmentationMap* PROTOBUF_NULLABLE value);
+  ::DataProtoPolygon::TissueSegmentationMap* PROTOBUF_NULLABLE unsafe_arena_release_tissue_segmentation_map();
 
   private:
-  const ::histowmics::TissueSegmentationMap& _internal_tissue_segmentation_map() const;
-  ::histowmics::TissueSegmentationMap* PROTOBUF_NONNULL _internal_mutable_tissue_segmentation_map();
+  const ::DataProtoPolygon::TissueSegmentationMap& _internal_tissue_segmentation_map() const;
+  ::DataProtoPolygon::TissueSegmentationMap* PROTOBUF_NONNULL _internal_mutable_tissue_segmentation_map();
 
   public:
   // required int32 level = 2;
@@ -1114,12 +1114,12 @@ class TileSegmentationData final : public ::google::protobuf::Message
   void _internal_set_height(::int32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:histowmics.TileSegmentationData)
+  // @@protoc_insertion_point(class_scope:DataProtoPolygon.TileSegmentationData)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<3, 8,
-                                   2, 55,
+                                   2, 61,
                                    2>
       _table_;
 
@@ -1140,9 +1140,9 @@ class TileSegmentationData final : public ::google::protobuf::Message
         const TileSegmentationData& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::RepeatedPtrField< ::histowmics::SegmentationPolygon > masks_;
+    ::google::protobuf::RepeatedPtrField< ::DataProtoPolygon::SegmentationPolygon > masks_;
     ::google::protobuf::internal::ArenaStringPtr tile_id_;
-    ::histowmics::TissueSegmentationMap* PROTOBUF_NULLABLE tissue_segmentation_map_;
+    ::DataProtoPolygon::TissueSegmentationMap* PROTOBUF_NULLABLE tissue_segmentation_map_;
     ::int32_t level_;
     float x_;
     float y_;
@@ -1158,7 +1158,7 @@ extern const ::google::protobuf::internal::ClassDataFull TileSegmentationData_cl
 // -------------------------------------------------------------------
 
 class SlideSegmentationData final : public ::google::protobuf::Message
-/* @@protoc_insertion_point(class_definition:histowmics.SlideSegmentationData) */ {
+/* @@protoc_insertion_point(class_definition:DataProtoPolygon.SlideSegmentationData) */ {
  public:
   inline SlideSegmentationData() : SlideSegmentationData(nullptr) {}
   ~SlideSegmentationData() PROTOBUF_FINAL;
@@ -1281,7 +1281,7 @@ class SlideSegmentationData final : public ::google::protobuf::Message
  private:
   template <typename T>
   friend ::absl::string_view(::google::protobuf::internal::GetAnyMessageName)();
-  static ::absl::string_view FullMessageName() { return "histowmics.SlideSegmentationData"; }
+  static ::absl::string_view FullMessageName() { return "DataProtoPolygon.SlideSegmentationData"; }
 
  protected:
   explicit SlideSegmentationData(::google::protobuf::Arena* PROTOBUF_NULLABLE arena);
@@ -1315,23 +1315,23 @@ class SlideSegmentationData final : public ::google::protobuf::Message
     kMaxLevelFieldNumber = 4,
     kTissueEmptyClassFieldNumber = 7,
   };
-  // repeated .histowmics.TileSegmentationData tiles = 8;
+  // repeated .DataProtoPolygon.TileSegmentationData tiles = 8;
   int tiles_size() const;
   private:
   int _internal_tiles_size() const;
 
   public:
   void clear_tiles() ;
-  ::histowmics::TileSegmentationData* PROTOBUF_NONNULL mutable_tiles(int index);
-  ::google::protobuf::RepeatedPtrField<::histowmics::TileSegmentationData>* PROTOBUF_NONNULL mutable_tiles();
+  ::DataProtoPolygon::TileSegmentationData* PROTOBUF_NONNULL mutable_tiles(int index);
+  ::google::protobuf::RepeatedPtrField<::DataProtoPolygon::TileSegmentationData>* PROTOBUF_NONNULL mutable_tiles();
 
   private:
-  const ::google::protobuf::RepeatedPtrField<::histowmics::TileSegmentationData>& _internal_tiles() const;
-  ::google::protobuf::RepeatedPtrField<::histowmics::TileSegmentationData>* PROTOBUF_NONNULL _internal_mutable_tiles();
+  const ::google::protobuf::RepeatedPtrField<::DataProtoPolygon::TileSegmentationData>& _internal_tiles() const;
+  ::google::protobuf::RepeatedPtrField<::DataProtoPolygon::TileSegmentationData>* PROTOBUF_NONNULL _internal_mutable_tiles();
   public:
-  const ::histowmics::TileSegmentationData& tiles(int index) const;
-  ::histowmics::TileSegmentationData* PROTOBUF_NONNULL add_tiles();
-  const ::google::protobuf::RepeatedPtrField<::histowmics::TileSegmentationData>& tiles() const;
+  const ::DataProtoPolygon::TileSegmentationData& tiles(int index) const;
+  ::DataProtoPolygon::TileSegmentationData* PROTOBUF_NONNULL add_tiles();
+  const ::google::protobuf::RepeatedPtrField<::DataProtoPolygon::TileSegmentationData>& tiles() const;
   // map<int32, string> tissue_class_mapping = 9;
   int tissue_class_mapping_size() const;
   private:
@@ -1444,12 +1444,12 @@ class SlideSegmentationData final : public ::google::protobuf::Message
   void _internal_set_tissue_empty_class(::int32_t value);
 
   public:
-  // @@protoc_insertion_point(class_scope:histowmics.SlideSegmentationData)
+  // @@protoc_insertion_point(class_scope:DataProtoPolygon.SlideSegmentationData)
  private:
   class _Internal;
   friend class ::google::protobuf::internal::TcParser;
   static const ::google::protobuf::internal::TcParseTable<3, 9,
-                                   2, 119,
+                                   2, 125,
                                    2>
       _table_;
 
@@ -1470,7 +1470,7 @@ class SlideSegmentationData final : public ::google::protobuf::Message
         const SlideSegmentationData& from_msg);
     ::google::protobuf::internal::HasBits<1> _has_bits_;
     ::google::protobuf::internal::CachedSize _cached_size_;
-    ::google::protobuf::RepeatedPtrField< ::histowmics::TileSegmentationData > tiles_;
+    ::google::protobuf::RepeatedPtrField< ::DataProtoPolygon::TileSegmentationData > tiles_;
     ::google::protobuf::internal::MapField<SlideSegmentationData_TissueClassMappingEntry_DoNotUse, ::int32_t, ::std::string,
                       ::google::protobuf::internal::WireFormatLite::TYPE_INT32,
                       ::google::protobuf::internal::WireFormatLite::TYPE_STRING>
@@ -1517,13 +1517,13 @@ inline void SegmentationPolygon_Point::clear_x() {
   _impl_._has_bits_[0] &= ~0x00000001U;
 }
 inline float SegmentationPolygon_Point::x() const {
-  // @@protoc_insertion_point(field_get:histowmics.SegmentationPolygon.Point.x)
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.SegmentationPolygon.Point.x)
   return _internal_x();
 }
 inline void SegmentationPolygon_Point::set_x(float value) {
   _internal_set_x(value);
   _impl_._has_bits_[0] |= 0x00000001U;
-  // @@protoc_insertion_point(field_set:histowmics.SegmentationPolygon.Point.x)
+  // @@protoc_insertion_point(field_set:DataProtoPolygon.SegmentationPolygon.Point.x)
 }
 inline float SegmentationPolygon_Point::_internal_x() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
@@ -1545,13 +1545,13 @@ inline void SegmentationPolygon_Point::clear_y() {
   _impl_._has_bits_[0] &= ~0x00000002U;
 }
 inline float SegmentationPolygon_Point::y() const {
-  // @@protoc_insertion_point(field_get:histowmics.SegmentationPolygon.Point.y)
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.SegmentationPolygon.Point.y)
   return _internal_y();
 }
 inline void SegmentationPolygon_Point::set_y(float value) {
   _internal_set_y(value);
   _impl_._has_bits_[0] |= 0x00000002U;
-  // @@protoc_insertion_point(field_set:histowmics.SegmentationPolygon.Point.y)
+  // @@protoc_insertion_point(field_set:DataProtoPolygon.SegmentationPolygon.Point.y)
 }
 inline float SegmentationPolygon_Point::_internal_y() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
@@ -1577,13 +1577,13 @@ inline void SegmentationPolygon::clear_cell_id() {
   _impl_._has_bits_[0] &= ~0x00000004U;
 }
 inline ::int32_t SegmentationPolygon::cell_id() const {
-  // @@protoc_insertion_point(field_get:histowmics.SegmentationPolygon.cell_id)
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.SegmentationPolygon.cell_id)
   return _internal_cell_id();
 }
 inline void SegmentationPolygon::set_cell_id(::int32_t value) {
   _internal_set_cell_id(value);
   _impl_._has_bits_[0] |= 0x00000004U;
-  // @@protoc_insertion_point(field_set:histowmics.SegmentationPolygon.cell_id)
+  // @@protoc_insertion_point(field_set:DataProtoPolygon.SegmentationPolygon.cell_id)
 }
 inline ::int32_t SegmentationPolygon::_internal_cell_id() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
@@ -1606,7 +1606,7 @@ inline void SegmentationPolygon::clear_cell_type() {
 }
 inline const ::std::string& SegmentationPolygon::cell_type() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:histowmics.SegmentationPolygon.cell_type)
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.SegmentationPolygon.cell_type)
   return _internal_cell_type();
 }
 template <typename Arg_, typename... Args_>
@@ -1614,12 +1614,12 @@ PROTOBUF_ALWAYS_INLINE void SegmentationPolygon::set_cell_type(Arg_&& arg, Args_
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001U;
   _impl_.cell_type_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:histowmics.SegmentationPolygon.cell_type)
+  // @@protoc_insertion_point(field_set:DataProtoPolygon.SegmentationPolygon.cell_type)
 }
 inline ::std::string* PROTOBUF_NONNULL SegmentationPolygon::mutable_cell_type()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::std::string* _s = _internal_mutable_cell_type();
-  // @@protoc_insertion_point(field_mutable:histowmics.SegmentationPolygon.cell_type)
+  // @@protoc_insertion_point(field_mutable:DataProtoPolygon.SegmentationPolygon.cell_type)
   return _s;
 }
 inline const ::std::string& SegmentationPolygon::_internal_cell_type() const {
@@ -1638,7 +1638,7 @@ inline ::std::string* PROTOBUF_NONNULL SegmentationPolygon::_internal_mutable_ce
 }
 inline ::std::string* PROTOBUF_NULLABLE SegmentationPolygon::release_cell_type() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:histowmics.SegmentationPolygon.cell_type)
+  // @@protoc_insertion_point(field_release:DataProtoPolygon.SegmentationPolygon.cell_type)
   if ((_impl_._has_bits_[0] & 0x00000001U) == 0) {
     return nullptr;
   }
@@ -1660,7 +1660,7 @@ inline void SegmentationPolygon::set_allocated_cell_type(::std::string* PROTOBUF
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.cell_type_.IsDefault()) {
     _impl_.cell_type_.Set("", GetArena());
   }
-  // @@protoc_insertion_point(field_set_allocated:histowmics.SegmentationPolygon.cell_type)
+  // @@protoc_insertion_point(field_set_allocated:DataProtoPolygon.SegmentationPolygon.cell_type)
 }
 
 // required float confidence = 3;
@@ -1674,13 +1674,13 @@ inline void SegmentationPolygon::clear_confidence() {
   _impl_._has_bits_[0] &= ~0x00000008U;
 }
 inline float SegmentationPolygon::confidence() const {
-  // @@protoc_insertion_point(field_get:histowmics.SegmentationPolygon.confidence)
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.SegmentationPolygon.confidence)
   return _internal_confidence();
 }
 inline void SegmentationPolygon::set_confidence(float value) {
   _internal_set_confidence(value);
   _impl_._has_bits_[0] |= 0x00000008U;
-  // @@protoc_insertion_point(field_set:histowmics.SegmentationPolygon.confidence)
+  // @@protoc_insertion_point(field_set:DataProtoPolygon.SegmentationPolygon.confidence)
 }
 inline float SegmentationPolygon::_internal_confidence() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
@@ -1691,7 +1691,7 @@ inline void SegmentationPolygon::_internal_set_confidence(float value) {
   _impl_.confidence_ = value;
 }
 
-// repeated .histowmics.SegmentationPolygon.Point coordinates = 4;
+// repeated .DataProtoPolygon.SegmentationPolygon.Point coordinates = 4;
 inline int SegmentationPolygon::_internal_coordinates_size() const {
   return _internal_coordinates().size();
 }
@@ -1702,46 +1702,46 @@ inline void SegmentationPolygon::clear_coordinates() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.coordinates_.Clear();
 }
-inline ::histowmics::SegmentationPolygon_Point* PROTOBUF_NONNULL SegmentationPolygon::mutable_coordinates(int index)
+inline ::DataProtoPolygon::SegmentationPolygon_Point* PROTOBUF_NONNULL SegmentationPolygon::mutable_coordinates(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable:histowmics.SegmentationPolygon.coordinates)
+  // @@protoc_insertion_point(field_mutable:DataProtoPolygon.SegmentationPolygon.coordinates)
   return _internal_mutable_coordinates()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::histowmics::SegmentationPolygon_Point>* PROTOBUF_NONNULL SegmentationPolygon::mutable_coordinates()
+inline ::google::protobuf::RepeatedPtrField<::DataProtoPolygon::SegmentationPolygon_Point>* PROTOBUF_NONNULL SegmentationPolygon::mutable_coordinates()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:histowmics.SegmentationPolygon.coordinates)
+  // @@protoc_insertion_point(field_mutable_list:DataProtoPolygon.SegmentationPolygon.coordinates)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_coordinates();
 }
-inline const ::histowmics::SegmentationPolygon_Point& SegmentationPolygon::coordinates(int index) const
+inline const ::DataProtoPolygon::SegmentationPolygon_Point& SegmentationPolygon::coordinates(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:histowmics.SegmentationPolygon.coordinates)
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.SegmentationPolygon.coordinates)
   return _internal_coordinates().Get(index);
 }
-inline ::histowmics::SegmentationPolygon_Point* PROTOBUF_NONNULL SegmentationPolygon::add_coordinates()
+inline ::DataProtoPolygon::SegmentationPolygon_Point* PROTOBUF_NONNULL SegmentationPolygon::add_coordinates()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::histowmics::SegmentationPolygon_Point* _add = _internal_mutable_coordinates()->Add();
-  // @@protoc_insertion_point(field_add:histowmics.SegmentationPolygon.coordinates)
+  ::DataProtoPolygon::SegmentationPolygon_Point* _add = _internal_mutable_coordinates()->Add();
+  // @@protoc_insertion_point(field_add:DataProtoPolygon.SegmentationPolygon.coordinates)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::histowmics::SegmentationPolygon_Point>& SegmentationPolygon::coordinates() const
+inline const ::google::protobuf::RepeatedPtrField<::DataProtoPolygon::SegmentationPolygon_Point>& SegmentationPolygon::coordinates() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:histowmics.SegmentationPolygon.coordinates)
+  // @@protoc_insertion_point(field_list:DataProtoPolygon.SegmentationPolygon.coordinates)
   return _internal_coordinates();
 }
-inline const ::google::protobuf::RepeatedPtrField<::histowmics::SegmentationPolygon_Point>&
+inline const ::google::protobuf::RepeatedPtrField<::DataProtoPolygon::SegmentationPolygon_Point>&
 SegmentationPolygon::_internal_coordinates() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.coordinates_;
 }
-inline ::google::protobuf::RepeatedPtrField<::histowmics::SegmentationPolygon_Point>* PROTOBUF_NONNULL
+inline ::google::protobuf::RepeatedPtrField<::DataProtoPolygon::SegmentationPolygon_Point>* PROTOBUF_NONNULL
 SegmentationPolygon::_internal_mutable_coordinates() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.coordinates_;
 }
 
-// required .histowmics.SegmentationPolygon.Point centroid = 5;
+// required .DataProtoPolygon.SegmentationPolygon.Point centroid = 5;
 inline bool SegmentationPolygon::has_centroid() const {
   bool value = (_impl_._has_bits_[0] & 0x00000002U) != 0;
   PROTOBUF_ASSUME(!value || _impl_.centroid_ != nullptr);
@@ -1752,34 +1752,34 @@ inline void SegmentationPolygon::clear_centroid() {
   if (_impl_.centroid_ != nullptr) _impl_.centroid_->Clear();
   _impl_._has_bits_[0] &= ~0x00000002U;
 }
-inline const ::histowmics::SegmentationPolygon_Point& SegmentationPolygon::_internal_centroid() const {
+inline const ::DataProtoPolygon::SegmentationPolygon_Point& SegmentationPolygon::_internal_centroid() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  const ::histowmics::SegmentationPolygon_Point* p = _impl_.centroid_;
-  return p != nullptr ? *p : reinterpret_cast<const ::histowmics::SegmentationPolygon_Point&>(::histowmics::_SegmentationPolygon_Point_default_instance_);
+  const ::DataProtoPolygon::SegmentationPolygon_Point* p = _impl_.centroid_;
+  return p != nullptr ? *p : reinterpret_cast<const ::DataProtoPolygon::SegmentationPolygon_Point&>(::DataProtoPolygon::_SegmentationPolygon_Point_default_instance_);
 }
-inline const ::histowmics::SegmentationPolygon_Point& SegmentationPolygon::centroid() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:histowmics.SegmentationPolygon.centroid)
+inline const ::DataProtoPolygon::SegmentationPolygon_Point& SegmentationPolygon::centroid() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.SegmentationPolygon.centroid)
   return _internal_centroid();
 }
 inline void SegmentationPolygon::unsafe_arena_set_allocated_centroid(
-    ::histowmics::SegmentationPolygon_Point* PROTOBUF_NULLABLE value) {
+    ::DataProtoPolygon::SegmentationPolygon_Point* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.centroid_);
   }
-  _impl_.centroid_ = reinterpret_cast<::histowmics::SegmentationPolygon_Point*>(value);
+  _impl_.centroid_ = reinterpret_cast<::DataProtoPolygon::SegmentationPolygon_Point*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000002U;
   } else {
     _impl_._has_bits_[0] &= ~0x00000002U;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:histowmics.SegmentationPolygon.centroid)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:DataProtoPolygon.SegmentationPolygon.centroid)
 }
-inline ::histowmics::SegmentationPolygon_Point* PROTOBUF_NULLABLE SegmentationPolygon::release_centroid() {
+inline ::DataProtoPolygon::SegmentationPolygon_Point* PROTOBUF_NULLABLE SegmentationPolygon::release_centroid() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
   _impl_._has_bits_[0] &= ~0x00000002U;
-  ::histowmics::SegmentationPolygon_Point* released = _impl_.centroid_;
+  ::DataProtoPolygon::SegmentationPolygon_Point* released = _impl_.centroid_;
   _impl_.centroid_ = nullptr;
   if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
     auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -1794,31 +1794,31 @@ inline ::histowmics::SegmentationPolygon_Point* PROTOBUF_NULLABLE SegmentationPo
   }
   return released;
 }
-inline ::histowmics::SegmentationPolygon_Point* PROTOBUF_NULLABLE SegmentationPolygon::unsafe_arena_release_centroid() {
+inline ::DataProtoPolygon::SegmentationPolygon_Point* PROTOBUF_NULLABLE SegmentationPolygon::unsafe_arena_release_centroid() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:histowmics.SegmentationPolygon.centroid)
+  // @@protoc_insertion_point(field_release:DataProtoPolygon.SegmentationPolygon.centroid)
 
   _impl_._has_bits_[0] &= ~0x00000002U;
-  ::histowmics::SegmentationPolygon_Point* temp = _impl_.centroid_;
+  ::DataProtoPolygon::SegmentationPolygon_Point* temp = _impl_.centroid_;
   _impl_.centroid_ = nullptr;
   return temp;
 }
-inline ::histowmics::SegmentationPolygon_Point* PROTOBUF_NONNULL SegmentationPolygon::_internal_mutable_centroid() {
+inline ::DataProtoPolygon::SegmentationPolygon_Point* PROTOBUF_NONNULL SegmentationPolygon::_internal_mutable_centroid() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.centroid_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::histowmics::SegmentationPolygon_Point>(GetArena());
-    _impl_.centroid_ = reinterpret_cast<::histowmics::SegmentationPolygon_Point*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::DataProtoPolygon::SegmentationPolygon_Point>(GetArena());
+    _impl_.centroid_ = reinterpret_cast<::DataProtoPolygon::SegmentationPolygon_Point*>(p);
   }
   return _impl_.centroid_;
 }
-inline ::histowmics::SegmentationPolygon_Point* PROTOBUF_NONNULL SegmentationPolygon::mutable_centroid()
+inline ::DataProtoPolygon::SegmentationPolygon_Point* PROTOBUF_NONNULL SegmentationPolygon::mutable_centroid()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000002U;
-  ::histowmics::SegmentationPolygon_Point* _msg = _internal_mutable_centroid();
-  // @@protoc_insertion_point(field_mutable:histowmics.SegmentationPolygon.centroid)
+  ::DataProtoPolygon::SegmentationPolygon_Point* _msg = _internal_mutable_centroid();
+  // @@protoc_insertion_point(field_mutable:DataProtoPolygon.SegmentationPolygon.centroid)
   return _msg;
 }
-inline void SegmentationPolygon::set_allocated_centroid(::histowmics::SegmentationPolygon_Point* PROTOBUF_NULLABLE value) {
+inline void SegmentationPolygon::set_allocated_centroid(::DataProtoPolygon::SegmentationPolygon_Point* PROTOBUF_NULLABLE value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
@@ -1835,8 +1835,8 @@ inline void SegmentationPolygon::set_allocated_centroid(::histowmics::Segmentati
     _impl_._has_bits_[0] &= ~0x00000002U;
   }
 
-  _impl_.centroid_ = reinterpret_cast<::histowmics::SegmentationPolygon_Point*>(value);
-  // @@protoc_insertion_point(field_set_allocated:histowmics.SegmentationPolygon.centroid)
+  _impl_.centroid_ = reinterpret_cast<::DataProtoPolygon::SegmentationPolygon_Point*>(value);
+  // @@protoc_insertion_point(field_set_allocated:DataProtoPolygon.SegmentationPolygon.centroid)
 }
 
 // -------------------------------------------------------------------
@@ -1855,7 +1855,7 @@ inline void TileSegmentationData::clear_tile_id() {
 }
 inline const ::std::string& TileSegmentationData::tile_id() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:histowmics.TileSegmentationData.tile_id)
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.TileSegmentationData.tile_id)
   return _internal_tile_id();
 }
 template <typename Arg_, typename... Args_>
@@ -1863,12 +1863,12 @@ PROTOBUF_ALWAYS_INLINE void TileSegmentationData::set_tile_id(Arg_&& arg, Args_.
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001U;
   _impl_.tile_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:histowmics.TileSegmentationData.tile_id)
+  // @@protoc_insertion_point(field_set:DataProtoPolygon.TileSegmentationData.tile_id)
 }
 inline ::std::string* PROTOBUF_NONNULL TileSegmentationData::mutable_tile_id()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::std::string* _s = _internal_mutable_tile_id();
-  // @@protoc_insertion_point(field_mutable:histowmics.TileSegmentationData.tile_id)
+  // @@protoc_insertion_point(field_mutable:DataProtoPolygon.TileSegmentationData.tile_id)
   return _s;
 }
 inline const ::std::string& TileSegmentationData::_internal_tile_id() const {
@@ -1887,7 +1887,7 @@ inline ::std::string* PROTOBUF_NONNULL TileSegmentationData::_internal_mutable_t
 }
 inline ::std::string* PROTOBUF_NULLABLE TileSegmentationData::release_tile_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:histowmics.TileSegmentationData.tile_id)
+  // @@protoc_insertion_point(field_release:DataProtoPolygon.TileSegmentationData.tile_id)
   if ((_impl_._has_bits_[0] & 0x00000001U) == 0) {
     return nullptr;
   }
@@ -1909,7 +1909,7 @@ inline void TileSegmentationData::set_allocated_tile_id(::std::string* PROTOBUF_
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.tile_id_.IsDefault()) {
     _impl_.tile_id_.Set("", GetArena());
   }
-  // @@protoc_insertion_point(field_set_allocated:histowmics.TileSegmentationData.tile_id)
+  // @@protoc_insertion_point(field_set_allocated:DataProtoPolygon.TileSegmentationData.tile_id)
 }
 
 // required int32 level = 2;
@@ -1923,13 +1923,13 @@ inline void TileSegmentationData::clear_level() {
   _impl_._has_bits_[0] &= ~0x00000004U;
 }
 inline ::int32_t TileSegmentationData::level() const {
-  // @@protoc_insertion_point(field_get:histowmics.TileSegmentationData.level)
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.TileSegmentationData.level)
   return _internal_level();
 }
 inline void TileSegmentationData::set_level(::int32_t value) {
   _internal_set_level(value);
   _impl_._has_bits_[0] |= 0x00000004U;
-  // @@protoc_insertion_point(field_set:histowmics.TileSegmentationData.level)
+  // @@protoc_insertion_point(field_set:DataProtoPolygon.TileSegmentationData.level)
 }
 inline ::int32_t TileSegmentationData::_internal_level() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
@@ -1951,13 +1951,13 @@ inline void TileSegmentationData::clear_x() {
   _impl_._has_bits_[0] &= ~0x00000008U;
 }
 inline float TileSegmentationData::x() const {
-  // @@protoc_insertion_point(field_get:histowmics.TileSegmentationData.x)
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.TileSegmentationData.x)
   return _internal_x();
 }
 inline void TileSegmentationData::set_x(float value) {
   _internal_set_x(value);
   _impl_._has_bits_[0] |= 0x00000008U;
-  // @@protoc_insertion_point(field_set:histowmics.TileSegmentationData.x)
+  // @@protoc_insertion_point(field_set:DataProtoPolygon.TileSegmentationData.x)
 }
 inline float TileSegmentationData::_internal_x() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
@@ -1979,13 +1979,13 @@ inline void TileSegmentationData::clear_y() {
   _impl_._has_bits_[0] &= ~0x00000010U;
 }
 inline float TileSegmentationData::y() const {
-  // @@protoc_insertion_point(field_get:histowmics.TileSegmentationData.y)
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.TileSegmentationData.y)
   return _internal_y();
 }
 inline void TileSegmentationData::set_y(float value) {
   _internal_set_y(value);
   _impl_._has_bits_[0] |= 0x00000010U;
-  // @@protoc_insertion_point(field_set:histowmics.TileSegmentationData.y)
+  // @@protoc_insertion_point(field_set:DataProtoPolygon.TileSegmentationData.y)
 }
 inline float TileSegmentationData::_internal_y() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
@@ -2007,13 +2007,13 @@ inline void TileSegmentationData::clear_width() {
   _impl_._has_bits_[0] &= ~0x00000020U;
 }
 inline ::int32_t TileSegmentationData::width() const {
-  // @@protoc_insertion_point(field_get:histowmics.TileSegmentationData.width)
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.TileSegmentationData.width)
   return _internal_width();
 }
 inline void TileSegmentationData::set_width(::int32_t value) {
   _internal_set_width(value);
   _impl_._has_bits_[0] |= 0x00000020U;
-  // @@protoc_insertion_point(field_set:histowmics.TileSegmentationData.width)
+  // @@protoc_insertion_point(field_set:DataProtoPolygon.TileSegmentationData.width)
 }
 inline ::int32_t TileSegmentationData::_internal_width() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
@@ -2035,13 +2035,13 @@ inline void TileSegmentationData::clear_height() {
   _impl_._has_bits_[0] &= ~0x00000040U;
 }
 inline ::int32_t TileSegmentationData::height() const {
-  // @@protoc_insertion_point(field_get:histowmics.TileSegmentationData.height)
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.TileSegmentationData.height)
   return _internal_height();
 }
 inline void TileSegmentationData::set_height(::int32_t value) {
   _internal_set_height(value);
   _impl_._has_bits_[0] |= 0x00000040U;
-  // @@protoc_insertion_point(field_set:histowmics.TileSegmentationData.height)
+  // @@protoc_insertion_point(field_set:DataProtoPolygon.TileSegmentationData.height)
 }
 inline ::int32_t TileSegmentationData::_internal_height() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
@@ -2052,7 +2052,7 @@ inline void TileSegmentationData::_internal_set_height(::int32_t value) {
   _impl_.height_ = value;
 }
 
-// repeated .histowmics.SegmentationPolygon masks = 7;
+// repeated .DataProtoPolygon.SegmentationPolygon masks = 7;
 inline int TileSegmentationData::_internal_masks_size() const {
   return _internal_masks().size();
 }
@@ -2063,46 +2063,46 @@ inline void TileSegmentationData::clear_masks() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.masks_.Clear();
 }
-inline ::histowmics::SegmentationPolygon* PROTOBUF_NONNULL TileSegmentationData::mutable_masks(int index)
+inline ::DataProtoPolygon::SegmentationPolygon* PROTOBUF_NONNULL TileSegmentationData::mutable_masks(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable:histowmics.TileSegmentationData.masks)
+  // @@protoc_insertion_point(field_mutable:DataProtoPolygon.TileSegmentationData.masks)
   return _internal_mutable_masks()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::histowmics::SegmentationPolygon>* PROTOBUF_NONNULL TileSegmentationData::mutable_masks()
+inline ::google::protobuf::RepeatedPtrField<::DataProtoPolygon::SegmentationPolygon>* PROTOBUF_NONNULL TileSegmentationData::mutable_masks()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:histowmics.TileSegmentationData.masks)
+  // @@protoc_insertion_point(field_mutable_list:DataProtoPolygon.TileSegmentationData.masks)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_masks();
 }
-inline const ::histowmics::SegmentationPolygon& TileSegmentationData::masks(int index) const
+inline const ::DataProtoPolygon::SegmentationPolygon& TileSegmentationData::masks(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:histowmics.TileSegmentationData.masks)
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.TileSegmentationData.masks)
   return _internal_masks().Get(index);
 }
-inline ::histowmics::SegmentationPolygon* PROTOBUF_NONNULL TileSegmentationData::add_masks()
+inline ::DataProtoPolygon::SegmentationPolygon* PROTOBUF_NONNULL TileSegmentationData::add_masks()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::histowmics::SegmentationPolygon* _add = _internal_mutable_masks()->Add();
-  // @@protoc_insertion_point(field_add:histowmics.TileSegmentationData.masks)
+  ::DataProtoPolygon::SegmentationPolygon* _add = _internal_mutable_masks()->Add();
+  // @@protoc_insertion_point(field_add:DataProtoPolygon.TileSegmentationData.masks)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::histowmics::SegmentationPolygon>& TileSegmentationData::masks() const
+inline const ::google::protobuf::RepeatedPtrField<::DataProtoPolygon::SegmentationPolygon>& TileSegmentationData::masks() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:histowmics.TileSegmentationData.masks)
+  // @@protoc_insertion_point(field_list:DataProtoPolygon.TileSegmentationData.masks)
   return _internal_masks();
 }
-inline const ::google::protobuf::RepeatedPtrField<::histowmics::SegmentationPolygon>&
+inline const ::google::protobuf::RepeatedPtrField<::DataProtoPolygon::SegmentationPolygon>&
 TileSegmentationData::_internal_masks() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.masks_;
 }
-inline ::google::protobuf::RepeatedPtrField<::histowmics::SegmentationPolygon>* PROTOBUF_NONNULL
+inline ::google::protobuf::RepeatedPtrField<::DataProtoPolygon::SegmentationPolygon>* PROTOBUF_NONNULL
 TileSegmentationData::_internal_mutable_masks() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.masks_;
 }
 
-// required .histowmics.TissueSegmentationMap tissue_segmentation_map = 8;
+// required .DataProtoPolygon.TissueSegmentationMap tissue_segmentation_map = 8;
 inline bool TileSegmentationData::has_tissue_segmentation_map() const {
   bool value = (_impl_._has_bits_[0] & 0x00000002U) != 0;
   PROTOBUF_ASSUME(!value || _impl_.tissue_segmentation_map_ != nullptr);
@@ -2113,34 +2113,34 @@ inline void TileSegmentationData::clear_tissue_segmentation_map() {
   if (_impl_.tissue_segmentation_map_ != nullptr) _impl_.tissue_segmentation_map_->Clear();
   _impl_._has_bits_[0] &= ~0x00000002U;
 }
-inline const ::histowmics::TissueSegmentationMap& TileSegmentationData::_internal_tissue_segmentation_map() const {
+inline const ::DataProtoPolygon::TissueSegmentationMap& TileSegmentationData::_internal_tissue_segmentation_map() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
-  const ::histowmics::TissueSegmentationMap* p = _impl_.tissue_segmentation_map_;
-  return p != nullptr ? *p : reinterpret_cast<const ::histowmics::TissueSegmentationMap&>(::histowmics::_TissueSegmentationMap_default_instance_);
+  const ::DataProtoPolygon::TissueSegmentationMap* p = _impl_.tissue_segmentation_map_;
+  return p != nullptr ? *p : reinterpret_cast<const ::DataProtoPolygon::TissueSegmentationMap&>(::DataProtoPolygon::_TissueSegmentationMap_default_instance_);
 }
-inline const ::histowmics::TissueSegmentationMap& TileSegmentationData::tissue_segmentation_map() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:histowmics.TileSegmentationData.tissue_segmentation_map)
+inline const ::DataProtoPolygon::TissueSegmentationMap& TileSegmentationData::tissue_segmentation_map() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.TileSegmentationData.tissue_segmentation_map)
   return _internal_tissue_segmentation_map();
 }
 inline void TileSegmentationData::unsafe_arena_set_allocated_tissue_segmentation_map(
-    ::histowmics::TissueSegmentationMap* PROTOBUF_NULLABLE value) {
+    ::DataProtoPolygon::TissueSegmentationMap* PROTOBUF_NULLABLE value) {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (GetArena() == nullptr) {
     delete reinterpret_cast<::google::protobuf::MessageLite*>(_impl_.tissue_segmentation_map_);
   }
-  _impl_.tissue_segmentation_map_ = reinterpret_cast<::histowmics::TissueSegmentationMap*>(value);
+  _impl_.tissue_segmentation_map_ = reinterpret_cast<::DataProtoPolygon::TissueSegmentationMap*>(value);
   if (value != nullptr) {
     _impl_._has_bits_[0] |= 0x00000002U;
   } else {
     _impl_._has_bits_[0] &= ~0x00000002U;
   }
-  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:histowmics.TileSegmentationData.tissue_segmentation_map)
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:DataProtoPolygon.TileSegmentationData.tissue_segmentation_map)
 }
-inline ::histowmics::TissueSegmentationMap* PROTOBUF_NULLABLE TileSegmentationData::release_tissue_segmentation_map() {
+inline ::DataProtoPolygon::TissueSegmentationMap* PROTOBUF_NULLABLE TileSegmentationData::release_tissue_segmentation_map() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
 
   _impl_._has_bits_[0] &= ~0x00000002U;
-  ::histowmics::TissueSegmentationMap* released = _impl_.tissue_segmentation_map_;
+  ::DataProtoPolygon::TissueSegmentationMap* released = _impl_.tissue_segmentation_map_;
   _impl_.tissue_segmentation_map_ = nullptr;
   if (::google::protobuf::internal::DebugHardenForceCopyInRelease()) {
     auto* old = reinterpret_cast<::google::protobuf::MessageLite*>(released);
@@ -2155,31 +2155,31 @@ inline ::histowmics::TissueSegmentationMap* PROTOBUF_NULLABLE TileSegmentationDa
   }
   return released;
 }
-inline ::histowmics::TissueSegmentationMap* PROTOBUF_NULLABLE TileSegmentationData::unsafe_arena_release_tissue_segmentation_map() {
+inline ::DataProtoPolygon::TissueSegmentationMap* PROTOBUF_NULLABLE TileSegmentationData::unsafe_arena_release_tissue_segmentation_map() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:histowmics.TileSegmentationData.tissue_segmentation_map)
+  // @@protoc_insertion_point(field_release:DataProtoPolygon.TileSegmentationData.tissue_segmentation_map)
 
   _impl_._has_bits_[0] &= ~0x00000002U;
-  ::histowmics::TissueSegmentationMap* temp = _impl_.tissue_segmentation_map_;
+  ::DataProtoPolygon::TissueSegmentationMap* temp = _impl_.tissue_segmentation_map_;
   _impl_.tissue_segmentation_map_ = nullptr;
   return temp;
 }
-inline ::histowmics::TissueSegmentationMap* PROTOBUF_NONNULL TileSegmentationData::_internal_mutable_tissue_segmentation_map() {
+inline ::DataProtoPolygon::TissueSegmentationMap* PROTOBUF_NONNULL TileSegmentationData::_internal_mutable_tissue_segmentation_map() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (_impl_.tissue_segmentation_map_ == nullptr) {
-    auto* p = ::google::protobuf::Message::DefaultConstruct<::histowmics::TissueSegmentationMap>(GetArena());
-    _impl_.tissue_segmentation_map_ = reinterpret_cast<::histowmics::TissueSegmentationMap*>(p);
+    auto* p = ::google::protobuf::Message::DefaultConstruct<::DataProtoPolygon::TissueSegmentationMap>(GetArena());
+    _impl_.tissue_segmentation_map_ = reinterpret_cast<::DataProtoPolygon::TissueSegmentationMap*>(p);
   }
   return _impl_.tissue_segmentation_map_;
 }
-inline ::histowmics::TissueSegmentationMap* PROTOBUF_NONNULL TileSegmentationData::mutable_tissue_segmentation_map()
+inline ::DataProtoPolygon::TissueSegmentationMap* PROTOBUF_NONNULL TileSegmentationData::mutable_tissue_segmentation_map()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   _impl_._has_bits_[0] |= 0x00000002U;
-  ::histowmics::TissueSegmentationMap* _msg = _internal_mutable_tissue_segmentation_map();
-  // @@protoc_insertion_point(field_mutable:histowmics.TileSegmentationData.tissue_segmentation_map)
+  ::DataProtoPolygon::TissueSegmentationMap* _msg = _internal_mutable_tissue_segmentation_map();
+  // @@protoc_insertion_point(field_mutable:DataProtoPolygon.TileSegmentationData.tissue_segmentation_map)
   return _msg;
 }
-inline void TileSegmentationData::set_allocated_tissue_segmentation_map(::histowmics::TissueSegmentationMap* PROTOBUF_NULLABLE value) {
+inline void TileSegmentationData::set_allocated_tissue_segmentation_map(::DataProtoPolygon::TissueSegmentationMap* PROTOBUF_NULLABLE value) {
   ::google::protobuf::Arena* message_arena = GetArena();
   ::google::protobuf::internal::TSanWrite(&_impl_);
   if (message_arena == nullptr) {
@@ -2196,8 +2196,8 @@ inline void TileSegmentationData::set_allocated_tissue_segmentation_map(::histow
     _impl_._has_bits_[0] &= ~0x00000002U;
   }
 
-  _impl_.tissue_segmentation_map_ = reinterpret_cast<::histowmics::TissueSegmentationMap*>(value);
-  // @@protoc_insertion_point(field_set_allocated:histowmics.TileSegmentationData.tissue_segmentation_map)
+  _impl_.tissue_segmentation_map_ = reinterpret_cast<::DataProtoPolygon::TissueSegmentationMap*>(value);
+  // @@protoc_insertion_point(field_set_allocated:DataProtoPolygon.TileSegmentationData.tissue_segmentation_map)
 }
 
 // -------------------------------------------------------------------
@@ -2218,7 +2218,7 @@ inline void SlideSegmentationData::clear_slide_id() {
 }
 inline const ::std::string& SlideSegmentationData::slide_id() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:histowmics.SlideSegmentationData.slide_id)
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.SlideSegmentationData.slide_id)
   return _internal_slide_id();
 }
 template <typename Arg_, typename... Args_>
@@ -2226,12 +2226,12 @@ PROTOBUF_ALWAYS_INLINE void SlideSegmentationData::set_slide_id(Arg_&& arg, Args
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001U;
   _impl_.slide_id_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:histowmics.SlideSegmentationData.slide_id)
+  // @@protoc_insertion_point(field_set:DataProtoPolygon.SlideSegmentationData.slide_id)
 }
 inline ::std::string* PROTOBUF_NONNULL SlideSegmentationData::mutable_slide_id()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::std::string* _s = _internal_mutable_slide_id();
-  // @@protoc_insertion_point(field_mutable:histowmics.SlideSegmentationData.slide_id)
+  // @@protoc_insertion_point(field_mutable:DataProtoPolygon.SlideSegmentationData.slide_id)
   return _s;
 }
 inline const ::std::string& SlideSegmentationData::_internal_slide_id() const {
@@ -2250,7 +2250,7 @@ inline ::std::string* PROTOBUF_NONNULL SlideSegmentationData::_internal_mutable_
 }
 inline ::std::string* PROTOBUF_NULLABLE SlideSegmentationData::release_slide_id() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:histowmics.SlideSegmentationData.slide_id)
+  // @@protoc_insertion_point(field_release:DataProtoPolygon.SlideSegmentationData.slide_id)
   if ((_impl_._has_bits_[0] & 0x00000001U) == 0) {
     return nullptr;
   }
@@ -2272,7 +2272,7 @@ inline void SlideSegmentationData::set_allocated_slide_id(::std::string* PROTOBU
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.slide_id_.IsDefault()) {
     _impl_.slide_id_.Set("", GetArena());
   }
-  // @@protoc_insertion_point(field_set_allocated:histowmics.SlideSegmentationData.slide_id)
+  // @@protoc_insertion_point(field_set_allocated:DataProtoPolygon.SlideSegmentationData.slide_id)
 }
 
 // required string slide_path = 2;
@@ -2287,7 +2287,7 @@ inline void SlideSegmentationData::clear_slide_path() {
 }
 inline const ::std::string& SlideSegmentationData::slide_path() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:histowmics.SlideSegmentationData.slide_path)
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.SlideSegmentationData.slide_path)
   return _internal_slide_path();
 }
 template <typename Arg_, typename... Args_>
@@ -2295,12 +2295,12 @@ PROTOBUF_ALWAYS_INLINE void SlideSegmentationData::set_slide_path(Arg_&& arg, Ar
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000002U;
   _impl_.slide_path_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:histowmics.SlideSegmentationData.slide_path)
+  // @@protoc_insertion_point(field_set:DataProtoPolygon.SlideSegmentationData.slide_path)
 }
 inline ::std::string* PROTOBUF_NONNULL SlideSegmentationData::mutable_slide_path()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::std::string* _s = _internal_mutable_slide_path();
-  // @@protoc_insertion_point(field_mutable:histowmics.SlideSegmentationData.slide_path)
+  // @@protoc_insertion_point(field_mutable:DataProtoPolygon.SlideSegmentationData.slide_path)
   return _s;
 }
 inline const ::std::string& SlideSegmentationData::_internal_slide_path() const {
@@ -2319,7 +2319,7 @@ inline ::std::string* PROTOBUF_NONNULL SlideSegmentationData::_internal_mutable_
 }
 inline ::std::string* PROTOBUF_NULLABLE SlideSegmentationData::release_slide_path() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:histowmics.SlideSegmentationData.slide_path)
+  // @@protoc_insertion_point(field_release:DataProtoPolygon.SlideSegmentationData.slide_path)
   if ((_impl_._has_bits_[0] & 0x00000002U) == 0) {
     return nullptr;
   }
@@ -2341,7 +2341,7 @@ inline void SlideSegmentationData::set_allocated_slide_path(::std::string* PROTO
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.slide_path_.IsDefault()) {
     _impl_.slide_path_.Set("", GetArena());
   }
-  // @@protoc_insertion_point(field_set_allocated:histowmics.SlideSegmentationData.slide_path)
+  // @@protoc_insertion_point(field_set_allocated:DataProtoPolygon.SlideSegmentationData.slide_path)
 }
 
 // required float mpp = 3;
@@ -2355,13 +2355,13 @@ inline void SlideSegmentationData::clear_mpp() {
   _impl_._has_bits_[0] &= ~0x00000010U;
 }
 inline float SlideSegmentationData::mpp() const {
-  // @@protoc_insertion_point(field_get:histowmics.SlideSegmentationData.mpp)
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.SlideSegmentationData.mpp)
   return _internal_mpp();
 }
 inline void SlideSegmentationData::set_mpp(float value) {
   _internal_set_mpp(value);
   _impl_._has_bits_[0] |= 0x00000010U;
-  // @@protoc_insertion_point(field_set:histowmics.SlideSegmentationData.mpp)
+  // @@protoc_insertion_point(field_set:DataProtoPolygon.SlideSegmentationData.mpp)
 }
 inline float SlideSegmentationData::_internal_mpp() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
@@ -2383,13 +2383,13 @@ inline void SlideSegmentationData::clear_max_level() {
   _impl_._has_bits_[0] &= ~0x00000020U;
 }
 inline ::int32_t SlideSegmentationData::max_level() const {
-  // @@protoc_insertion_point(field_get:histowmics.SlideSegmentationData.max_level)
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.SlideSegmentationData.max_level)
   return _internal_max_level();
 }
 inline void SlideSegmentationData::set_max_level(::int32_t value) {
   _internal_set_max_level(value);
   _impl_._has_bits_[0] |= 0x00000020U;
-  // @@protoc_insertion_point(field_set:histowmics.SlideSegmentationData.max_level)
+  // @@protoc_insertion_point(field_set:DataProtoPolygon.SlideSegmentationData.max_level)
 }
 inline ::int32_t SlideSegmentationData::_internal_max_level() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
@@ -2412,7 +2412,7 @@ inline void SlideSegmentationData::clear_cell_model_name() {
 }
 inline const ::std::string& SlideSegmentationData::cell_model_name() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:histowmics.SlideSegmentationData.cell_model_name)
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.SlideSegmentationData.cell_model_name)
   return _internal_cell_model_name();
 }
 template <typename Arg_, typename... Args_>
@@ -2420,12 +2420,12 @@ PROTOBUF_ALWAYS_INLINE void SlideSegmentationData::set_cell_model_name(Arg_&& ar
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000004U;
   _impl_.cell_model_name_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:histowmics.SlideSegmentationData.cell_model_name)
+  // @@protoc_insertion_point(field_set:DataProtoPolygon.SlideSegmentationData.cell_model_name)
 }
 inline ::std::string* PROTOBUF_NONNULL SlideSegmentationData::mutable_cell_model_name()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::std::string* _s = _internal_mutable_cell_model_name();
-  // @@protoc_insertion_point(field_mutable:histowmics.SlideSegmentationData.cell_model_name)
+  // @@protoc_insertion_point(field_mutable:DataProtoPolygon.SlideSegmentationData.cell_model_name)
   return _s;
 }
 inline const ::std::string& SlideSegmentationData::_internal_cell_model_name() const {
@@ -2444,7 +2444,7 @@ inline ::std::string* PROTOBUF_NONNULL SlideSegmentationData::_internal_mutable_
 }
 inline ::std::string* PROTOBUF_NULLABLE SlideSegmentationData::release_cell_model_name() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:histowmics.SlideSegmentationData.cell_model_name)
+  // @@protoc_insertion_point(field_release:DataProtoPolygon.SlideSegmentationData.cell_model_name)
   if ((_impl_._has_bits_[0] & 0x00000004U) == 0) {
     return nullptr;
   }
@@ -2466,7 +2466,7 @@ inline void SlideSegmentationData::set_allocated_cell_model_name(::std::string* 
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.cell_model_name_.IsDefault()) {
     _impl_.cell_model_name_.Set("", GetArena());
   }
-  // @@protoc_insertion_point(field_set_allocated:histowmics.SlideSegmentationData.cell_model_name)
+  // @@protoc_insertion_point(field_set_allocated:DataProtoPolygon.SlideSegmentationData.cell_model_name)
 }
 
 // required string tissue_model_name = 6;
@@ -2481,7 +2481,7 @@ inline void SlideSegmentationData::clear_tissue_model_name() {
 }
 inline const ::std::string& SlideSegmentationData::tissue_model_name() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:histowmics.SlideSegmentationData.tissue_model_name)
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.SlideSegmentationData.tissue_model_name)
   return _internal_tissue_model_name();
 }
 template <typename Arg_, typename... Args_>
@@ -2489,12 +2489,12 @@ PROTOBUF_ALWAYS_INLINE void SlideSegmentationData::set_tissue_model_name(Arg_&& 
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000008U;
   _impl_.tissue_model_name_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:histowmics.SlideSegmentationData.tissue_model_name)
+  // @@protoc_insertion_point(field_set:DataProtoPolygon.SlideSegmentationData.tissue_model_name)
 }
 inline ::std::string* PROTOBUF_NONNULL SlideSegmentationData::mutable_tissue_model_name()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::std::string* _s = _internal_mutable_tissue_model_name();
-  // @@protoc_insertion_point(field_mutable:histowmics.SlideSegmentationData.tissue_model_name)
+  // @@protoc_insertion_point(field_mutable:DataProtoPolygon.SlideSegmentationData.tissue_model_name)
   return _s;
 }
 inline const ::std::string& SlideSegmentationData::_internal_tissue_model_name() const {
@@ -2513,7 +2513,7 @@ inline ::std::string* PROTOBUF_NONNULL SlideSegmentationData::_internal_mutable_
 }
 inline ::std::string* PROTOBUF_NULLABLE SlideSegmentationData::release_tissue_model_name() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:histowmics.SlideSegmentationData.tissue_model_name)
+  // @@protoc_insertion_point(field_release:DataProtoPolygon.SlideSegmentationData.tissue_model_name)
   if ((_impl_._has_bits_[0] & 0x00000008U) == 0) {
     return nullptr;
   }
@@ -2535,7 +2535,7 @@ inline void SlideSegmentationData::set_allocated_tissue_model_name(::std::string
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.tissue_model_name_.IsDefault()) {
     _impl_.tissue_model_name_.Set("", GetArena());
   }
-  // @@protoc_insertion_point(field_set_allocated:histowmics.SlideSegmentationData.tissue_model_name)
+  // @@protoc_insertion_point(field_set_allocated:DataProtoPolygon.SlideSegmentationData.tissue_model_name)
 }
 
 // required int32 tissue_empty_class = 7;
@@ -2549,13 +2549,13 @@ inline void SlideSegmentationData::clear_tissue_empty_class() {
   _impl_._has_bits_[0] &= ~0x00000040U;
 }
 inline ::int32_t SlideSegmentationData::tissue_empty_class() const {
-  // @@protoc_insertion_point(field_get:histowmics.SlideSegmentationData.tissue_empty_class)
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.SlideSegmentationData.tissue_empty_class)
   return _internal_tissue_empty_class();
 }
 inline void SlideSegmentationData::set_tissue_empty_class(::int32_t value) {
   _internal_set_tissue_empty_class(value);
   _impl_._has_bits_[0] |= 0x00000040U;
-  // @@protoc_insertion_point(field_set:histowmics.SlideSegmentationData.tissue_empty_class)
+  // @@protoc_insertion_point(field_set:DataProtoPolygon.SlideSegmentationData.tissue_empty_class)
 }
 inline ::int32_t SlideSegmentationData::_internal_tissue_empty_class() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
@@ -2566,7 +2566,7 @@ inline void SlideSegmentationData::_internal_set_tissue_empty_class(::int32_t va
   _impl_.tissue_empty_class_ = value;
 }
 
-// repeated .histowmics.TileSegmentationData tiles = 8;
+// repeated .DataProtoPolygon.TileSegmentationData tiles = 8;
 inline int SlideSegmentationData::_internal_tiles_size() const {
   return _internal_tiles().size();
 }
@@ -2577,40 +2577,40 @@ inline void SlideSegmentationData::clear_tiles() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_.tiles_.Clear();
 }
-inline ::histowmics::TileSegmentationData* PROTOBUF_NONNULL SlideSegmentationData::mutable_tiles(int index)
+inline ::DataProtoPolygon::TileSegmentationData* PROTOBUF_NONNULL SlideSegmentationData::mutable_tiles(int index)
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable:histowmics.SlideSegmentationData.tiles)
+  // @@protoc_insertion_point(field_mutable:DataProtoPolygon.SlideSegmentationData.tiles)
   return _internal_mutable_tiles()->Mutable(index);
 }
-inline ::google::protobuf::RepeatedPtrField<::histowmics::TileSegmentationData>* PROTOBUF_NONNULL SlideSegmentationData::mutable_tiles()
+inline ::google::protobuf::RepeatedPtrField<::DataProtoPolygon::TileSegmentationData>* PROTOBUF_NONNULL SlideSegmentationData::mutable_tiles()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_list:histowmics.SlideSegmentationData.tiles)
+  // @@protoc_insertion_point(field_mutable_list:DataProtoPolygon.SlideSegmentationData.tiles)
   ::google::protobuf::internal::TSanWrite(&_impl_);
   return _internal_mutable_tiles();
 }
-inline const ::histowmics::TileSegmentationData& SlideSegmentationData::tiles(int index) const
+inline const ::DataProtoPolygon::TileSegmentationData& SlideSegmentationData::tiles(int index) const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:histowmics.SlideSegmentationData.tiles)
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.SlideSegmentationData.tiles)
   return _internal_tiles().Get(index);
 }
-inline ::histowmics::TileSegmentationData* PROTOBUF_NONNULL SlideSegmentationData::add_tiles()
+inline ::DataProtoPolygon::TileSegmentationData* PROTOBUF_NONNULL SlideSegmentationData::add_tiles()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  ::histowmics::TileSegmentationData* _add = _internal_mutable_tiles()->Add();
-  // @@protoc_insertion_point(field_add:histowmics.SlideSegmentationData.tiles)
+  ::DataProtoPolygon::TileSegmentationData* _add = _internal_mutable_tiles()->Add();
+  // @@protoc_insertion_point(field_add:DataProtoPolygon.SlideSegmentationData.tiles)
   return _add;
 }
-inline const ::google::protobuf::RepeatedPtrField<::histowmics::TileSegmentationData>& SlideSegmentationData::tiles() const
+inline const ::google::protobuf::RepeatedPtrField<::DataProtoPolygon::TileSegmentationData>& SlideSegmentationData::tiles() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_list:histowmics.SlideSegmentationData.tiles)
+  // @@protoc_insertion_point(field_list:DataProtoPolygon.SlideSegmentationData.tiles)
   return _internal_tiles();
 }
-inline const ::google::protobuf::RepeatedPtrField<::histowmics::TileSegmentationData>&
+inline const ::google::protobuf::RepeatedPtrField<::DataProtoPolygon::TileSegmentationData>&
 SlideSegmentationData::_internal_tiles() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return _impl_.tiles_;
 }
-inline ::google::protobuf::RepeatedPtrField<::histowmics::TileSegmentationData>* PROTOBUF_NONNULL
+inline ::google::protobuf::RepeatedPtrField<::DataProtoPolygon::TileSegmentationData>* PROTOBUF_NONNULL
 SlideSegmentationData::_internal_mutable_tiles() {
   ::google::protobuf::internal::TSanRead(&_impl_);
   return &_impl_.tiles_;
@@ -2632,7 +2632,7 @@ inline const ::google::protobuf::Map<::int32_t, ::std::string>& SlideSegmentatio
   return _impl_.tissue_class_mapping_.GetMap();
 }
 inline const ::google::protobuf::Map<::int32_t, ::std::string>& SlideSegmentationData::tissue_class_mapping() const ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_map:histowmics.SlideSegmentationData.tissue_class_mapping)
+  // @@protoc_insertion_point(field_map:DataProtoPolygon.SlideSegmentationData.tissue_class_mapping)
   return _internal_tissue_class_mapping();
 }
 inline ::google::protobuf::Map<::int32_t, ::std::string>* PROTOBUF_NONNULL SlideSegmentationData::_internal_mutable_tissue_class_mapping() {
@@ -2641,7 +2641,7 @@ inline ::google::protobuf::Map<::int32_t, ::std::string>* PROTOBUF_NONNULL Slide
 }
 inline ::google::protobuf::Map<::int32_t, ::std::string>* PROTOBUF_NONNULL SlideSegmentationData::mutable_tissue_class_mapping()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_mutable_map:histowmics.SlideSegmentationData.tissue_class_mapping)
+  // @@protoc_insertion_point(field_mutable_map:DataProtoPolygon.SlideSegmentationData.tissue_class_mapping)
   return _internal_mutable_tissue_class_mapping();
 }
 
@@ -2661,7 +2661,7 @@ inline void TissueSegmentationMap::clear_data() {
 }
 inline const ::std::string& TissueSegmentationMap::data() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:histowmics.TissueSegmentationMap.data)
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.TissueSegmentationMap.data)
   return _internal_data();
 }
 template <typename Arg_, typename... Args_>
@@ -2669,12 +2669,12 @@ PROTOBUF_ALWAYS_INLINE void TissueSegmentationMap::set_data(Arg_&& arg, Args_...
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000001U;
   _impl_.data_.SetBytes(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:histowmics.TissueSegmentationMap.data)
+  // @@protoc_insertion_point(field_set:DataProtoPolygon.TissueSegmentationMap.data)
 }
 inline ::std::string* PROTOBUF_NONNULL TissueSegmentationMap::mutable_data()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::std::string* _s = _internal_mutable_data();
-  // @@protoc_insertion_point(field_mutable:histowmics.TissueSegmentationMap.data)
+  // @@protoc_insertion_point(field_mutable:DataProtoPolygon.TissueSegmentationMap.data)
   return _s;
 }
 inline const ::std::string& TissueSegmentationMap::_internal_data() const {
@@ -2693,7 +2693,7 @@ inline ::std::string* PROTOBUF_NONNULL TissueSegmentationMap::_internal_mutable_
 }
 inline ::std::string* PROTOBUF_NULLABLE TissueSegmentationMap::release_data() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:histowmics.TissueSegmentationMap.data)
+  // @@protoc_insertion_point(field_release:DataProtoPolygon.TissueSegmentationMap.data)
   if ((_impl_._has_bits_[0] & 0x00000001U) == 0) {
     return nullptr;
   }
@@ -2715,7 +2715,7 @@ inline void TissueSegmentationMap::set_allocated_data(::std::string* PROTOBUF_NU
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.data_.IsDefault()) {
     _impl_.data_.Set("", GetArena());
   }
-  // @@protoc_insertion_point(field_set_allocated:histowmics.TissueSegmentationMap.data)
+  // @@protoc_insertion_point(field_set_allocated:DataProtoPolygon.TissueSegmentationMap.data)
 }
 
 // required int32 width = 2;
@@ -2729,13 +2729,13 @@ inline void TissueSegmentationMap::clear_width() {
   _impl_._has_bits_[0] &= ~0x00000004U;
 }
 inline ::int32_t TissueSegmentationMap::width() const {
-  // @@protoc_insertion_point(field_get:histowmics.TissueSegmentationMap.width)
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.TissueSegmentationMap.width)
   return _internal_width();
 }
 inline void TissueSegmentationMap::set_width(::int32_t value) {
   _internal_set_width(value);
   _impl_._has_bits_[0] |= 0x00000004U;
-  // @@protoc_insertion_point(field_set:histowmics.TissueSegmentationMap.width)
+  // @@protoc_insertion_point(field_set:DataProtoPolygon.TissueSegmentationMap.width)
 }
 inline ::int32_t TissueSegmentationMap::_internal_width() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
@@ -2757,13 +2757,13 @@ inline void TissueSegmentationMap::clear_height() {
   _impl_._has_bits_[0] &= ~0x00000008U;
 }
 inline ::int32_t TissueSegmentationMap::height() const {
-  // @@protoc_insertion_point(field_get:histowmics.TissueSegmentationMap.height)
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.TissueSegmentationMap.height)
   return _internal_height();
 }
 inline void TissueSegmentationMap::set_height(::int32_t value) {
   _internal_set_height(value);
   _impl_._has_bits_[0] |= 0x00000008U;
-  // @@protoc_insertion_point(field_set:histowmics.TissueSegmentationMap.height)
+  // @@protoc_insertion_point(field_set:DataProtoPolygon.TissueSegmentationMap.height)
 }
 inline ::int32_t TissueSegmentationMap::_internal_height() const {
   ::google::protobuf::internal::TSanRead(&_impl_);
@@ -2786,7 +2786,7 @@ inline void TissueSegmentationMap::clear_dtype() {
 }
 inline const ::std::string& TissueSegmentationMap::dtype() const
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
-  // @@protoc_insertion_point(field_get:histowmics.TissueSegmentationMap.dtype)
+  // @@protoc_insertion_point(field_get:DataProtoPolygon.TissueSegmentationMap.dtype)
   return _internal_dtype();
 }
 template <typename Arg_, typename... Args_>
@@ -2794,12 +2794,12 @@ PROTOBUF_ALWAYS_INLINE void TissueSegmentationMap::set_dtype(Arg_&& arg, Args_..
   ::google::protobuf::internal::TSanWrite(&_impl_);
   _impl_._has_bits_[0] |= 0x00000002U;
   _impl_.dtype_.Set(static_cast<Arg_&&>(arg), args..., GetArena());
-  // @@protoc_insertion_point(field_set:histowmics.TissueSegmentationMap.dtype)
+  // @@protoc_insertion_point(field_set:DataProtoPolygon.TissueSegmentationMap.dtype)
 }
 inline ::std::string* PROTOBUF_NONNULL TissueSegmentationMap::mutable_dtype()
     ABSL_ATTRIBUTE_LIFETIME_BOUND {
   ::std::string* _s = _internal_mutable_dtype();
-  // @@protoc_insertion_point(field_mutable:histowmics.TissueSegmentationMap.dtype)
+  // @@protoc_insertion_point(field_mutable:DataProtoPolygon.TissueSegmentationMap.dtype)
   return _s;
 }
 inline const ::std::string& TissueSegmentationMap::_internal_dtype() const {
@@ -2818,7 +2818,7 @@ inline ::std::string* PROTOBUF_NONNULL TissueSegmentationMap::_internal_mutable_
 }
 inline ::std::string* PROTOBUF_NULLABLE TissueSegmentationMap::release_dtype() {
   ::google::protobuf::internal::TSanWrite(&_impl_);
-  // @@protoc_insertion_point(field_release:histowmics.TissueSegmentationMap.dtype)
+  // @@protoc_insertion_point(field_release:DataProtoPolygon.TissueSegmentationMap.dtype)
   if ((_impl_._has_bits_[0] & 0x00000002U) == 0) {
     return nullptr;
   }
@@ -2840,7 +2840,7 @@ inline void TissueSegmentationMap::set_allocated_dtype(::std::string* PROTOBUF_N
   if (::google::protobuf::internal::DebugHardenForceCopyDefaultString() && _impl_.dtype_.IsDefault()) {
     _impl_.dtype_.Set("", GetArena());
   }
-  // @@protoc_insertion_point(field_set_allocated:histowmics.TissueSegmentationMap.dtype)
+  // @@protoc_insertion_point(field_set_allocated:DataProtoPolygon.TissueSegmentationMap.dtype)
 }
 
 #ifdef __GNUC__
@@ -2848,7 +2848,7 @@ inline void TissueSegmentationMap::set_allocated_dtype(::std::string* PROTOBUF_N
 #endif  // __GNUC__
 
 // @@protoc_insertion_point(namespace_scope)
-}  // namespace histowmics
+}  // namespace DataProtoPolygon
 
 
 // @@protoc_insertion_point(global_scope)

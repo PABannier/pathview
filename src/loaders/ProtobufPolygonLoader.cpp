@@ -16,7 +16,7 @@ bool ProtobufPolygonLoader::Load(const std::string& filepath,
     }
 
     // Parse protobuf message
-    histowmics::SlideSegmentationData slideData;
+    DataProtoPolygon::SlideSegmentationData slideData;
     if (!slideData.ParseFromIstream(&file)) {
         std::cerr << "Failed to parse protobuf message" << std::endl;
         return false;

@@ -72,7 +72,7 @@ The polygon overlay system displays cell segmentation data loaded from Protocol 
   - Batches rendering by class ID for performance
 
 - **PolygonLoader** (`PolygonLoader.{h,cpp}`): Loads polygon data from protobuf files
-  - Parses `histowmics.SlideSegmentationData` messages
+  - Parses `DataProtobufSchema.SlideSegmentationData` messages
   - Maps string cell types to integer class IDs
   - Generates default colors for classes
 
@@ -168,7 +168,7 @@ Check cache statistics in the UI for performance debugging.
 
 **Polygon Format**:
 - Protocol Buffer files (`.pb`, `.protobuf`)
-- Schema: `histowmics.SlideSegmentationData` (see `protobuf/cell_polygons.proto`)
+- Schema: `DataProtobufSchema.SlideSegmentationData` (see `protobuf/cell_polygons.proto`)
 - Contains cell polygons with coordinates, cell types, and confidence scores
 
 ## Common Issues
