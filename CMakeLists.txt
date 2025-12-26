@@ -77,6 +77,7 @@ set(APP_SOURCES
     src/core/Viewport.cpp
     src/core/Animation.cpp
     src/core/TileCache.cpp
+    src/core/TileLoadThreadPool.cpp
     src/core/SlideRenderer.cpp
     src/core/TextureManager.cpp
     src/core/Minimap.cpp

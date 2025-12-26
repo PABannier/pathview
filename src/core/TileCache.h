@@ -5,6 +5,9 @@
 #include <list>
 #include <cstdint>
 #include <memory>
+#include <shared_mutex>
+#include <functional>
+#include <atomic>
 
 // Tile data storage
 struct TileData {
@@ -89,13 +92,15 @@ private:
     void EvictLRU();
     void TouchTile(const TileKey& key);
 
+    mutable std::shared_mutex cacheMutex_;  // Thread safety: read/write lock
+
     std::unordered_map<TileKey, CacheEntry, TileKeyHash> cache_;
     std::list<TileKey> lruList_;  // Front = most recent, back = least recent
 
     size_t maxMemoryBytes_;
     size_t currentMemoryUsage_;
 
-    // Statistics
-    size_t hitCount_;
-    size_t missCount_;
+    // Statistics (atomic for thread-safe reads)
+    std::atomic<size_t> hitCount_;
+    std::atomic<size_t> missCount_;
 };

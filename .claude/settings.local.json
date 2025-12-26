@@ -43,7 +43,8 @@
       "Bash(.venv/bin/pip install:*)",
       "Bash(.venv/bin/python:*)",
       "Bash(vcpkg help:*)",
-      "Bash(vcpkg version:*)"
+      "Bash(vcpkg version:*)",
+      "Bash(./build/test/unit_tests:*)"
     ],
     "deny": [],
     "ask": []

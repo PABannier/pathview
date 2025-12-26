@@ -74,6 +74,7 @@ target_sources(unit_tests PRIVATE
     ${CMAKE_SOURCE_DIR}/src/core/Animation.cpp
     ${CMAKE_SOURCE_DIR}/src/core/Viewport.cpp
     ${CMAKE_SOURCE_DIR}/src/core/TileCache.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/TileLoadThreadPool.cpp
     ${CMAKE_SOURCE_DIR}/src/core/PolygonIndex.cpp
     ${CMAKE_SOURCE_DIR}/src/core/PolygonTriangulator.cpp
     ${CMAKE_SOURCE_DIR}/src/core/SlideRenderer.cpp

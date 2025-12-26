@@ -576,6 +576,7 @@ void Application::LoadSlide(const std::string& path) {
         renderer_,
         textureManager_.get()
     );
+    slideRenderer_->Initialize();  // Start async tile loading threads
 
     // Create minimap
     int minimapHeight = std::max(0, windowHeight_ - static_cast<int>(STATUS_BAR_HEIGHT));

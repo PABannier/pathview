@@ -14,6 +14,12 @@ struct TileKey {
         return level == other.level && tileX == other.tileX && tileY == other.tileY;
     }
 
+    bool operator<(const TileKey& other) const {
+        if (level != other.level) return level < other.level;
+        if (tileX != other.tileX) return tileX < other.tileX;
+        return tileY < other.tileY;
+    }
+
     std::string ToString() const;
 };
 

@@ -22,6 +22,9 @@ TileCache::~TileCache() {
 }
 
 const TileData* TileCache::GetTile(const TileKey& key) {
+    // Use unique_lock because TouchTile modifies LRU list on hit
+    std::unique_lock<std::shared_mutex> lock(cacheMutex_);
+
     auto it = cache_.find(key);
 
     if (it != cache_.end()) {
@@ -37,6 +40,8 @@ const TileData* TileCache::GetTile(const TileKey& key) {
 }
 
 void TileCache::InsertTile(const TileKey& key, TileData&& data) {
+    std::unique_lock<std::shared_mutex> lock(cacheMutex_);
+
     // Check if already in cache
     if (cache_.find(key) != cache_.end()) {
         // Already cached, just touch it
@@ -62,10 +67,12 @@ void TileCache::InsertTile(const TileKey& key, TileData&& data) {
 }
 
 bool TileCache::HasTile(const TileKey& key) const {
+    std::shared_lock<std::shared_mutex> lock(cacheMutex_);
     return cache_.find(key) != cache_.end();
 }
 
 void TileCache::Clear() {
+    std::unique_lock<std::shared_mutex> lock(cacheMutex_);
     cache_.clear();
     lruList_.clear();
     currentMemoryUsage_ = 0;

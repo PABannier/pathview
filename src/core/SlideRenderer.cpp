@@ -3,9 +3,13 @@
 #include "Viewport.h"
 #include "TextureManager.h"
 #include "TileCache.h"
+#include "TileLoadThreadPool.h"
+#include "TileLoadRequest.h"
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+
+static const int32_t NUM_WORKER_THREADS = 4;
 
 SlideRenderer::SlideRenderer(SlideLoader* loader, SDL_Renderer* renderer, TextureManager* textureManager)
     : loader_(loader)
@@ -16,6 +20,25 @@ SlideRenderer::SlideRenderer(SlideLoader* loader, SDL_Renderer* renderer, Textur
 }
 
 SlideRenderer::~SlideRenderer() {
+    Shutdown();
+}
+
+void SlideRenderer::Initialize() {
+    if (!threadPool_) {
+        threadPool_ = std::make_unique<TileLoadThreadPool>(NUM_WORKER_THREADS);
+        threadPool_->Initialize(loader_, tileCache_.get(),
+            [this](const TileKey& key) { OnTileReady(key); });
+        threadPool_->Start();
+        std::cout << "SlideRenderer: Async tile loading initialized" << std::endl;
+    }
+}
+
+void SlideRenderer::Shutdown() {
+    if (threadPool_) {
+        threadPool_->Stop();
+        threadPool_.reset();
+        std::cout << "SlideRenderer: Async tile loading shutdown" << std::endl;
+    }
 }
 
 void SlideRenderer::Render(const Viewport& viewport) {
@@ -40,6 +63,18 @@ size_t SlideRenderer::GetCacheMemoryUsage() const {
 
 double SlideRenderer::GetCacheHitRate() const {
     return tileCache_ ? tileCache_->GetHitRate() : 0.0;
+}
+
+size_t SlideRenderer::GetPendingTileCount() const {
+    return threadPool_ ? threadPool_->GetPendingCount() : 0;
+}
+
+void SlideRenderer::OnTileReady(const TileKey& key) {
+    // Called from background thread when a tile finishes loading
+    // Remove from our pending set
+    std::lock_guard<std::mutex> lock(pendingMutex_);
+    pendingTiles_.erase(key);
+    // The tile is now in cache and will be picked up on next render frame
 }
 
 int32_t SlideRenderer::SelectLevel(double zoom) const {
@@ -119,52 +154,142 @@ std::vector<TileKey> SlideRenderer::EnumerateVisibleTiles(const Viewport& viewpo
 }
 
 void SlideRenderer::LoadAndRenderTile(const TileKey& key, const Viewport& viewport, int32_t level) {
-    // Try to get tile from cache
+    // 1. Check cache - if hit, render immediately
     const TileData* cachedTile = tileCache_->GetTile(key);
+    if (cachedTile) {
+        RenderTileToScreen(key, cachedTile, viewport, level);
+        return;
+    }
 
-    if (!cachedTile) {
-        // Cache miss - load tile from slide
-        double downsample = loader_->GetLevelDownsample(level);
+    // 2. Cache miss - find and render fallback from coarser pyramid level
+    TileKey fallbackKey;
+    const TileData* fallbackTile = FindBestFallback(key, &fallbackKey);
+    if (fallbackTile) {
+        RenderFallbackTile(key, fallbackKey, fallbackTile, viewport, level);
+    }
 
-        // Calculate tile position in level 0 coordinates
-        int64_t x0 = static_cast<int64_t>(key.tileX * TILE_SIZE * downsample);
-        int64_t y0 = static_cast<int64_t>(key.tileY * TILE_SIZE * downsample);
-
-        // Calculate tile dimensions at this level
-        auto levelDims = loader_->GetLevelDimensions(level);
-        int64_t levelX = key.tileX * TILE_SIZE;
-        int64_t levelY = key.tileY * TILE_SIZE;
-
-        int64_t tileWidth = std::min(static_cast<int64_t>(TILE_SIZE), levelDims.width - levelX);
-        int64_t tileHeight = std::min(static_cast<int64_t>(TILE_SIZE), levelDims.height - levelY);
-
-        if (tileWidth <= 0 || tileHeight <= 0) {
-            return;
+    // 3. Submit async load request if thread pool is available and tile not already pending
+    if (threadPool_) {
+        bool alreadyPending = false;
+        {
+            std::lock_guard<std::mutex> lock(pendingMutex_);
+            alreadyPending = pendingTiles_.find(key) != pendingTiles_.end();
+            if (!alreadyPending) {
+                pendingTiles_.insert(key);
+            }
         }
 
-        // Read tile from slide
-        uint32_t* pixels = loader_->ReadRegion(level, x0, y0, tileWidth, tileHeight);
-        if (!pixels) {
-            return;
+        if (!alreadyPending) {
+            TileLoadPriority priority = fallbackTile
+                ? TileLoadPriority::VISIBLE    // Has fallback showing
+                : TileLoadPriority::URGENT;    // No fallback, high priority
+            threadPool_->SubmitRequest(TileLoadRequest(key, priority));
         }
+    }
+}
 
-        // Store in cache
-        TileData tileData(pixels, tileWidth, tileHeight);
-        tileCache_->InsertTile(key, std::move(tileData));
+const TileData* SlideRenderer::FindBestFallback(const TileKey& key, TileKey* outFallbackKey) {
+    // Search from next coarser level down to lowest resolution
+    int32_t levelCount = loader_->GetLevelCount();
+    double targetDownsample = loader_->GetLevelDownsample(key.level);
 
-        // Get the cached tile
-        cachedTile = tileCache_->GetTile(key);
-        if (!cachedTile) {
-            return;
+    for (int32_t l = key.level + 1; l < levelCount; ++l) {
+        double fallbackDownsample = loader_->GetLevelDownsample(l);
+        double ratio = fallbackDownsample / targetDownsample;
+
+        // Calculate equivalent tile position at coarser level
+        int32_t fallbackTileX = static_cast<int32_t>(key.tileX / ratio);
+        int32_t fallbackTileY = static_cast<int32_t>(key.tileY / ratio);
+
+        TileKey fallbackKey{l, fallbackTileX, fallbackTileY};
+
+        const TileData* tile = tileCache_->GetTile(fallbackKey);
+        if (tile) {
+            *outFallbackKey = fallbackKey;
+            return tile;
         }
     }
 
+    return nullptr;  // No fallback available
+}
+
+void SlideRenderer::RenderFallbackTile(const TileKey& targetKey, const TileKey& fallbackKey,
+                                        const TileData* fallbackTile, const Viewport& viewport,
+                                        int32_t targetLevel) {
+    // We have a coarser tile and need to render a portion of it scaled up
+    // to cover where the target high-res tile would be
+
+    double targetDownsample = loader_->GetLevelDownsample(targetLevel);
+    double fallbackDownsample = loader_->GetLevelDownsample(fallbackKey.level);
+
+    // Calculate the target tile's position in slide coordinates (level 0)
+    double targetX0 = targetKey.tileX * TILE_SIZE * targetDownsample;
+    double targetY0 = targetKey.tileY * TILE_SIZE * targetDownsample;
+    double targetX1 = targetX0 + TILE_SIZE * targetDownsample;
+    double targetY1 = targetY0 + TILE_SIZE * targetDownsample;
+
+    // Calculate the fallback tile's position in slide coordinates (level 0)
+    double fallbackX0 = fallbackKey.tileX * TILE_SIZE * fallbackDownsample;
+    double fallbackY0 = fallbackKey.tileY * TILE_SIZE * fallbackDownsample;
+
+    // Calculate source rect within the fallback tile (in fallback tile pixel coords)
+    double srcX0 = (targetX0 - fallbackX0) / fallbackDownsample;
+    double srcY0 = (targetY0 - fallbackY0) / fallbackDownsample;
+    double srcX1 = (targetX1 - fallbackX0) / fallbackDownsample;
+    double srcY1 = (targetY1 - fallbackY0) / fallbackDownsample;
+
+    // Clamp source rect to fallback tile bounds
+    srcX0 = std::max(0.0, std::min(srcX0, static_cast<double>(fallbackTile->width)));
+    srcY0 = std::max(0.0, std::min(srcY0, static_cast<double>(fallbackTile->height)));
+    srcX1 = std::max(0.0, std::min(srcX1, static_cast<double>(fallbackTile->width)));
+    srcY1 = std::max(0.0, std::min(srcY1, static_cast<double>(fallbackTile->height)));
+
+    if (srcX1 <= srcX0 || srcY1 <= srcY0) {
+        return;  // No valid source region
+    }
+
+    SDL_Rect srcRect = {
+        static_cast<int>(srcX0),
+        static_cast<int>(srcY0),
+        static_cast<int>(srcX1 - srcX0),
+        static_cast<int>(srcY1 - srcY0)
+    };
+
+    // Get or create texture for the fallback tile
+    SDL_Texture* texture = textureManager_->GetOrCreateTexture(
+        fallbackKey,
+        fallbackTile->pixels,
+        fallbackTile->width,
+        fallbackTile->height
+    );
+
+    if (!texture) {
+        return;
+    }
+
+    // Calculate destination rect in screen coordinates
+    Vec2 topLeft = viewport.SlideToScreen(Vec2(targetX0, targetY0));
+    Vec2 bottomRight = viewport.SlideToScreen(Vec2(targetX1, targetY1));
+
+    SDL_Rect dstRect = {
+        static_cast<int>(topLeft.x),
+        static_cast<int>(topLeft.y),
+        static_cast<int>(bottomRight.x - topLeft.x),
+        static_cast<int>(bottomRight.y - topLeft.y)
+    };
+
+    // Render the fallback tile portion scaled up
+    SDL_RenderCopy(renderer_, texture, &srcRect, &dstRect);
+}
+
+void SlideRenderer::RenderTileToScreen(const TileKey& key, const TileData* tileData,
+                                        const Viewport& viewport, int32_t level) {
     // Create or get SDL texture
     SDL_Texture* texture = textureManager_->GetOrCreateTexture(
         key,
-        cachedTile->pixels,
-        cachedTile->width,
-        cachedTile->height
+        tileData->pixels,
+        tileData->width,
+        tileData->height
     );
 
     if (!texture) {
@@ -175,8 +300,8 @@ void SlideRenderer::LoadAndRenderTile(const TileKey& key, const Viewport& viewpo
     double downsample = loader_->GetLevelDownsample(level);
     double tileX0 = key.tileX * TILE_SIZE * downsample;
     double tileY0 = key.tileY * TILE_SIZE * downsample;
-    double tileX1 = tileX0 + cachedTile->width * downsample;
-    double tileY1 = tileY0 + cachedTile->height * downsample;
+    double tileX1 = tileX0 + tileData->width * downsample;
+    double tileY1 = tileY0 + tileData->height * downsample;
 
     // Convert to screen coordinates
     Vec2 topLeft = viewport.SlideToScreen(Vec2(tileX0, tileY0));
