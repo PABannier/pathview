@@ -2,21 +2,12 @@
 #include "cell_polygons.pb.h"
 #include <fstream>
 #include <iostream>
+#include <filesystem>
 
 bool ProtobufPolygonLoader::Load(const std::string& filepath,
                                  std::vector<Polygon>& outPolygons,
                                  std::map<int, SDL_Color>& outClassColors,
                                  std::map<int, std::string>& outClassNames) {
-    std::cout << "\n=== Loading Protobuf Polygon Data ===" << std::endl;
-    std::cout << "File: " << filepath << std::endl;
-
-    // Check extension
-    if (filepath.find(".pb") == std::string::npos && filepath.find(".protobuf") == std::string::npos) {
-        std::cerr << "Invalid file extension: " << filepath << std::endl;
-        std::cerr << "Expected .pb or .protobuf file" << std::endl;
-        return false;
-    }
-
     // Read file into string
     std::ifstream file(filepath, std::ios::binary);
     if (!file.is_open()) {

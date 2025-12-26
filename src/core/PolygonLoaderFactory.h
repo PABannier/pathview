@@ -15,7 +15,7 @@ public:
 
         if (extension == ".json") {
             return std::make_unique<JSONPolygonLoader>();
-        } else if (extension == ".pb" || extension == ".proto") {
+        } else if (extension == ".pb" || extension == ".proto" || extension == ".bin") {
             return std::make_unique<ProtobufPolygonLoader>();
         }
 
