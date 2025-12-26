@@ -27,6 +27,9 @@ find_package(NFD REQUIRED)
 find_package(Protobuf REQUIRED)
 find_package(OpenSlide REQUIRED)
 
+# Find simdjson (for JSON polygon loading)
+find_package(simdjson CONFIG REQUIRED)
+
 # Find PNG
 find_package(PNG REQUIRED)
 
@@ -124,6 +127,7 @@ target_link_libraries(pathview PRIVATE
     absl::hash
     ${UUID_LIBRARY}
     PNG::PNG
+    simdjson::simdjson
 )
 
 # Platform-specific settings

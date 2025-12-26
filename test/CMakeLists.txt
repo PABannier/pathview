@@ -22,6 +22,7 @@ find_package(OpenSlide REQUIRED)
 find_package(Protobuf REQUIRED)
 find_package(absl CONFIG REQUIRED)
 find_package(PNG REQUIRED)
+find_package(simdjson CONFIG REQUIRED)
 
 # ============================================================================
 # Unit Tests (Pure C++ - No SDL dependencies)
@@ -65,6 +66,7 @@ target_link_libraries(unit_tests PRIVATE
     absl::log_internal_message
     absl::hash
     PNG::PNG
+    simdjson::simdjson
 )
 
 # Link against source files directly to avoid SDL dependencies

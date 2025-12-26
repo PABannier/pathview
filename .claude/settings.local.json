@@ -41,7 +41,9 @@
       "Bash(source .venv/bin/activate)",
       "Bash(.venv/bin/python -m pytest tests/test_graph_nodes.py -v -m unit)",
       "Bash(.venv/bin/pip install:*)",
-      "Bash(.venv/bin/python:*)"
+      "Bash(.venv/bin/python:*)",
+      "Bash(vcpkg help:*)",
+      "Bash(vcpkg version:*)"
     ],
     "deny": [],
     "ask": []
