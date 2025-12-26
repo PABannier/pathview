@@ -1,5 +1,6 @@
 #include "PolygonOverlay.h"
 #include "PolygonLoader.h"
+#include "PolygonLoaderFactory.h"
 #include "PolygonIndex.h"
 #include "PolygonTriangulator.h"
 #include "Viewport.h"
@@ -46,10 +47,17 @@ bool PolygonOverlay::LoadPolygons(const std::string& filepath) {
     std::cout << "\n=== Loading Polygons ===" << std::endl;
     std::cout << "File: " << filepath << std::endl;
 
-    // Load polygons from binary file
+    // Select the polygon loader based on the file extension
+    std::unique_ptr<PolygonLoader> polygonLoader = PolygonLoaderFactory::CreateLoader(filepath);
+    if (!polygonLoader) {
+        std::cerr << "Could not find a loader to load the polygon data." << std::endl;
+        return false;
+    }
+
+    // Load polygons
     std::map<int, SDL_Color> loadedColors;
     std::map<int, std::string> loadedClassNames;
-    if (!PolygonLoader::Load(filepath, polygons_, loadedColors, loadedClassNames)) {
+    if (!polygonLoader->Load(filepath, polygons_, loadedColors, loadedClassNames)) {
         return false;
     }
 

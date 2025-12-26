@@ -79,6 +79,8 @@ set(APP_SOURCES
     src/core/Minimap.cpp
     src/core/PolygonOverlay.cpp
     src/core/PolygonLoader.cpp
+    src/core/ProtobufPolygonLoader.cpp
+    src/core/JSONPolygonLoader.cpp
     src/core/PolygonIndex.cpp
     src/core/PolygonTriangulator.cpp
     src/core/AnnotationManager.cpp

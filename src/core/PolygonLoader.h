@@ -8,29 +8,30 @@
 #include <SDL2/SDL.h>
 
 /**
- * Protocol Buffer Polygon File Loader
+ * Base class of Polygon File Loader
  *
- * Loads polygon data from protobuf-serialized SlideSegmentationData files.
- * The file format uses the histowmics.SlideSegmentationData message type.
+ * Defines a common interface for loading polygon data.
  *
  * Cell types (strings) are automatically mapped to integer class IDs.
  */
 class PolygonLoader {
 public:
+    virtual ~PolygonLoader() = default;
+
     /**
-     * Load polygons from protobuf file
-     * @param filepath Path to .pb or .protobuf file
+     * Defines a base interface for loading polygon files
+     * @param filepath Path to the polygon file
      * @param outPolygons Output vector of polygons
      * @param outClassColors Output map of class ID to color
      * @param outClassNames Output map of class ID to class name
      * @return true if successful, false otherwise
      */
-    static bool Load(const std::string& filepath,
+    virtual bool Load(const std::string& filepath,
                      std::vector<Polygon>& outPolygons,
                      std::map<int, SDL_Color>& outClassColors,
-                     std::map<int, std::string>& outClassNames);
+                     std::map<int, std::string>& outClassNames) = 0;
 
-private:
+protected:
     /**
      * Build class name to ID mapping from unique cell types
      * @param cellTypes Set of unique cell type strings
