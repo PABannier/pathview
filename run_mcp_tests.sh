@@ -29,7 +29,14 @@ TEST_SCRIPT="${SCRIPT_DIR}/test_mcp_client.py"
 
 MCP_PORT=9000
 HTTP_PORT=8080
-SOCKET_PATH="/tmp/pathview-latest.sock"
+IPC_PORT=9999
+
+# Port file location (cross-platform)
+if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ "$OSTYPE" == "win32" ]]; then
+    PORT_FILE="${TEMP:-/tmp}/pathview-port.txt"
+else
+    PORT_FILE="/tmp/pathview-port"
+fi
 
 # Process IDs
 PATHVIEW_PID=""
@@ -52,9 +59,9 @@ cleanup() {
         wait $PATHVIEW_PID 2>/dev/null || true
     fi
 
-    # Clean up socket file
-    if [ -S "$SOCKET_PATH" ]; then
-        rm -f "$SOCKET_PATH"
+    # Clean up port file
+    if [ -f "$PORT_FILE" ]; then
+        rm -f "$PORT_FILE"
     fi
 
     echo -e "${GREEN}[CLEANUP]${NC} Done"
@@ -87,7 +94,16 @@ wait_for_service() {
 
 # Function to check if port is in use
 check_port() {
-    lsof -i :$1 >/dev/null 2>&1
+    if command -v lsof &> /dev/null; then
+        lsof -i :$1 >/dev/null 2>&1
+    elif command -v netstat &> /dev/null; then
+        netstat -an | grep -q ":$1 "
+    elif command -v ss &> /dev/null; then
+        ss -tuln | grep -q ":$1 "
+    else
+        # Fallback: try to connect
+        (echo >/dev/tcp/localhost/$1) 2>/dev/null
+    fi
 }
 
 # Print banner
@@ -125,18 +141,40 @@ if [ ! -f "$TEST_SCRIPT" ]; then
     exit 1
 fi
 
+# Check for virtual environment and activate if exists
+PYTHON_CMD="python3"
+if [ -f "${SCRIPT_DIR}/.venv/bin/activate" ]; then
+    echo -e "${BLUE}[CHECK]${NC} Activating virtual environment..."
+    source "${SCRIPT_DIR}/.venv/bin/activate"
+    PYTHON_CMD="python"
+elif [ -f "${SCRIPT_DIR}/venv/bin/activate" ]; then
+    echo -e "${BLUE}[CHECK]${NC} Activating virtual environment..."
+    source "${SCRIPT_DIR}/venv/bin/activate"
+    PYTHON_CMD="python"
+fi
+
 # Check Python
-if ! command -v python3 &> /dev/null; then
+if ! command -v $PYTHON_CMD &> /dev/null; then
     echo -e "${RED}[ERROR]${NC} Python 3 not found"
     exit 1
 fi
 
 # Check Python dependencies
 echo -e "${BLUE}[CHECK]${NC} Checking Python dependencies..."
-if ! python3 -c "import requests; import sseclient" 2>/dev/null; then
+if ! $PYTHON_CMD -c "import requests; import sseclient" 2>/dev/null; then
     echo -e "${YELLOW}[WARN]${NC} Missing Python dependencies"
     echo "Installing dependencies..."
-    pip3 install -r "${SCRIPT_DIR}/requirements.txt" || {
+    # Try to create venv if system Python doesn't allow pip install
+    if [ ! -f "${SCRIPT_DIR}/.venv/bin/activate" ]; then
+        echo -e "${BLUE}[INFO]${NC} Creating virtual environment..."
+        python3 -m venv "${SCRIPT_DIR}/.venv" || {
+            echo -e "${RED}[ERROR]${NC} Failed to create virtual environment"
+            exit 1
+        }
+        source "${SCRIPT_DIR}/.venv/bin/activate"
+        PYTHON_CMD="python"
+    fi
+    pip install -r "${SCRIPT_DIR}/requirements.txt" || {
         echo -e "${RED}[ERROR]${NC} Failed to install Python dependencies"
         exit 1
     }
@@ -213,21 +251,34 @@ echo ""
 if check_port $MCP_PORT; then
     echo -e "${YELLOW}[WARN]${NC} Port $MCP_PORT is already in use"
     echo "Attempting to kill existing process..."
-    lsof -ti :$MCP_PORT | xargs kill -9 2>/dev/null || true
+    if command -v lsof &> /dev/null; then
+        lsof -ti :$MCP_PORT | xargs kill -9 2>/dev/null || true
+    fi
     sleep 1
 fi
 
 if check_port $HTTP_PORT; then
     echo -e "${YELLOW}[WARN]${NC} Port $HTTP_PORT is already in use"
     echo "Attempting to kill existing process..."
-    lsof -ti :$HTTP_PORT | xargs kill -9 2>/dev/null || true
+    if command -v lsof &> /dev/null; then
+        lsof -ti :$HTTP_PORT | xargs kill -9 2>/dev/null || true
+    fi
     sleep 1
 fi
 
-# Clean up old socket file
-if [ -S "$SOCKET_PATH" ]; then
-    echo -e "${BLUE}[CLEANUP]${NC} Removing old socket file..."
-    rm -f "$SOCKET_PATH"
+if check_port $IPC_PORT; then
+    echo -e "${YELLOW}[WARN]${NC} Port $IPC_PORT is already in use"
+    echo "Attempting to kill existing process..."
+    if command -v lsof &> /dev/null; then
+        lsof -ti :$IPC_PORT | xargs kill -9 2>/dev/null || true
+    fi
+    sleep 1
+fi
+
+# Clean up old port file
+if [ -f "$PORT_FILE" ]; then
+    echo -e "${BLUE}[CLEANUP]${NC} Removing old port file..."
+    rm -f "$PORT_FILE"
 fi
 
 # Launch PathView GUI
@@ -242,16 +293,20 @@ fi
 
 echo -e "${GREEN}[LAUNCH]${NC} PathView GUI started (PID: $PATHVIEW_PID)"
 
-# Wait for PathView to create socket
-if ! wait_for_service "PathView IPC socket" "[ -S $SOCKET_PATH ]" 10; then
-    echo -e "${RED}[ERROR]${NC} PathView failed to create IPC socket"
+# Wait for PathView to create port file (indicates IPC server is ready)
+if ! wait_for_service "PathView IPC server" "[ -f \"$PORT_FILE\" ]" 10; then
+    echo -e "${RED}[ERROR]${NC} PathView failed to start IPC server"
     exit 1
 fi
+
+# Read the IPC port from the port file
+IPC_PORT=$(cat "$PORT_FILE" 2>/dev/null || echo "9999")
+echo -e "${GREEN}[INFO]${NC} PathView IPC server listening on port $IPC_PORT"
 
 # Launch MCP Server
 echo -e "${BLUE}[LAUNCH]${NC} Starting MCP server..."
 "$PATHVIEW_MCP_BIN" \
-    --socket "$SOCKET_PATH" \
+    --ipc-port $IPC_PORT \
     --http-port $HTTP_PORT \
     --mcp-port $MCP_PORT \
     > /tmp/pathview-mcp.log 2>&1 &
@@ -281,13 +336,14 @@ echo "=========================================="
 echo "Services Ready"
 echo "=========================================="
 echo -e "PathView GUI:  ${GREEN}Running${NC} (PID: $PATHVIEW_PID)"
+echo -e "IPC Server:    ${GREEN}Running${NC} (Port: $IPC_PORT)"
 echo -e "MCP Server:    ${GREEN}Running${NC} (PID: $MCP_SERVER_PID, Port: $MCP_PORT)"
 echo -e "HTTP Server:   ${GREEN}Running${NC} (Port: $HTTP_PORT)"
 echo "=========================================="
 echo ""
 
 # Build test command
-TEST_CMD="python3 \"$TEST_SCRIPT\" \"$SLIDE_PATH\""
+TEST_CMD="$PYTHON_CMD \"$TEST_SCRIPT\" \"$SLIDE_PATH\""
 
 if [ -n "$POLYGON_PATH" ]; then
     TEST_CMD="$TEST_CMD --polygons \"$POLYGON_PATH\""

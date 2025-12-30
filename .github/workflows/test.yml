@@ -59,10 +59,8 @@ jobs:
         chmod +x run_tests.sh
         ./run_tests.sh || echo "Some unit tests failed"
 
-    - name: Run MCP integration tests
-      run: |
-        chmod +x run_mcp_tests.sh
-        ./run_mcp_tests.sh || echo "Some MCP tests failed"
+    # Note: MCP integration tests require a slide file which is not available in CI
+    # To run locally: ./run_mcp_tests.sh --slide /path/to/slide.svs
 
     - name: Upload test results
       if: always()
@@ -102,7 +100,7 @@ jobs:
 
     - name: Install vcpkg dependencies
       run: |
-        ~/vcpkg/vcpkg install
+        vcpkg install
 
     - name: Configure CMake
       run: |
@@ -119,10 +117,8 @@ jobs:
         chmod +x run_tests.sh
         ./run_tests.sh || echo "Some unit tests failed"
 
-    - name: Run MCP integration tests
-      run: |
-        chmod +x run_mcp_tests.sh
-        ./run_mcp_tests.sh || echo "Some MCP tests failed"
+    # Note: MCP integration tests require a slide file which is not available in CI
+    # To run locally: ./run_mcp_tests.sh --slide /path/to/slide.svs
 
     - name: Upload test results
       if: always()
@@ -200,6 +196,9 @@ jobs:
         cd build
         ctest --build-config Release --output-on-failure --timeout 120
       continue-on-error: true
+
+    # Note: MCP integration tests require a slide file which is not available in CI
+    # To run locally: .\run_mcp_tests.sh --slide C:\path\to\slide.svs
 
     - name: Upload test results
       if: always()
