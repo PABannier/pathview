@@ -102,7 +102,7 @@ jobs:
 
     - name: Install vcpkg dependencies
       run: |
-        vcpkg install
+        ~/vcpkg/vcpkg install
 
     - name: Configure CMake
       run: |
