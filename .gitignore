@@ -42,3 +42,11 @@ pathview
 
 # vcpkg
 vcpkg_installed/
+
+# Cache
+.pytest_cache/
+.ruff_cache/
+.venv/
+
+# Server
+server/
