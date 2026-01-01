@@ -1459,11 +1459,6 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
                 throw std::runtime_error("No polygons loaded. Use load_polygons tool to load cell segmentation data first.");
             }
 
-            double x = params.at("x").get<double>();
-            double y = params.at("y").get<double>();
-            double w = params.at("w").get<double>();
-            double h = params.at("h").get<double>();
-
             // TODO: Implement polygon query in PolygonOverlay
             // For now, return empty list
             return json{{"polygons", json::array()}};
@@ -1621,11 +1616,6 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
             };
         }
         else if (method == "snapshot.capture") {
-            // Optional parameters
-            bool includeUI = params.value("include_ui", false);
-            int width = params.value("width", windowWidth_);
-            int height = params.value("height", windowHeight_);
-
             // Note: includeUI and custom width/height not yet implemented
             // Currently captures at window resolution without UI
 
