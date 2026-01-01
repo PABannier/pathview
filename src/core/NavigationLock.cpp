@@ -5,7 +5,7 @@ NavigationLock::NavigationLock()
     , ownerUUID_("")
     , grantedTime_()
     , ttlMs_(0)
-    , clientFd_(-1)
+    , clientFd_(INVALID_SOCKET_VALUE)
 {
 }
 
@@ -27,5 +27,5 @@ void NavigationLock::Reset() {
     ownerUUID_ = "";
     grantedTime_ = std::chrono::steady_clock::time_point();
     ttlMs_ = std::chrono::milliseconds(0);
-    clientFd_ = -1;
+    clientFd_ = INVALID_SOCKET_VALUE;
 }

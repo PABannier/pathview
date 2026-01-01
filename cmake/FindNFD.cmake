@@ -13,7 +13,13 @@
 set(_VCPKG_INSTALLED_DIR "${CMAKE_SOURCE_DIR}/vcpkg_installed")
 
 # Determine vcpkg triplet
-if(APPLE)
+if(WIN32)
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        set(_VCPKG_TRIPLET "x64-windows")
+    else()
+        set(_VCPKG_TRIPLET "x86-windows")
+    endif()
+elseif(APPLE)
     if(CMAKE_OSX_ARCHITECTURES STREQUAL "x86_64" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
         set(_VCPKG_TRIPLET "x64-osx")
     else()
@@ -21,18 +27,24 @@ if(APPLE)
     endif()
 elseif(UNIX)
     set(_VCPKG_TRIPLET "x64-linux")
-elseif(WIN32)
-    set(_VCPKG_TRIPLET "x64-windows")
 endif()
 
 # Search paths: vcpkg installed dir first, then system paths
-set(_SEARCH_PATHS
-    "${_VCPKG_INSTALLED_DIR}/${_VCPKG_TRIPLET}"
-    "${CMAKE_PREFIX_PATH}"
-    /opt/homebrew
-    /usr/local
-    /usr
-)
+if(WIN32)
+    set(_SEARCH_PATHS
+        "${_VCPKG_INSTALLED_DIR}/${_VCPKG_TRIPLET}"
+        "${CMAKE_PREFIX_PATH}"
+        "$ENV{NFD_HOME}"
+    )
+else()
+    set(_SEARCH_PATHS
+        "${_VCPKG_INSTALLED_DIR}/${_VCPKG_TRIPLET}"
+        "${CMAKE_PREFIX_PATH}"
+        /opt/homebrew
+        /usr/local
+        /usr
+    )
+endif()
 
 # Find include directory (look for nfd.h)
 find_path(NFD_INCLUDE_DIR nfd.h
@@ -40,10 +52,17 @@ find_path(NFD_INCLUDE_DIR nfd.h
     PATH_SUFFIXES include)
 
 # Find the library
-find_library(NFD_LIBRARY
-    NAMES nfd libnfd
-    PATHS ${_SEARCH_PATHS}
-    PATH_SUFFIXES lib)
+if(WIN32)
+    find_library(NFD_LIBRARY
+        NAMES nfd libnfd
+        PATHS ${_SEARCH_PATHS}
+        PATH_SUFFIXES lib bin)
+else()
+    find_library(NFD_LIBRARY
+        NAMES nfd libnfd
+        PATHS ${_SEARCH_PATHS}
+        PATH_SUFFIXES lib)
+endif()
 
 # Handle the REQUIRED argument and set NFD_FOUND
 include(FindPackageHandleStandardArgs)
@@ -62,15 +81,19 @@ if(NFD_FOUND)
             INTERFACE_INCLUDE_DIRECTORIES "${NFD_INCLUDE_DIR}"
         )
         
-        # NFD on macOS requires AppKit framework
-        if(APPLE)
+        # Platform-specific dependencies
+        if(WIN32)
+            # NFD on Windows requires COM libraries
+            set_property(TARGET nfd::nfd APPEND PROPERTY
+                INTERFACE_LINK_LIBRARIES comctl32 ole32 uuid shell32
+            )
+        elseif(APPLE)
+            # NFD on macOS requires AppKit framework
             set_property(TARGET nfd::nfd APPEND PROPERTY
                 INTERFACE_LINK_LIBRARIES "-framework AppKit" "-framework UniformTypeIdentifiers"
             )
-        endif()
-        
-        # NFD on Linux requires GTK3 or other portal backends
-        if(UNIX AND NOT APPLE)
+        else()
+            # NFD on Linux requires GTK3 or other portal backends
             find_package(PkgConfig QUIET)
             if(PkgConfig_FOUND)
                 pkg_check_modules(GTK3 QUIET gtk+-3.0)
@@ -88,5 +111,3 @@ if(NFD_FOUND)
     
     mark_as_advanced(NFD_INCLUDE_DIR NFD_LIBRARY)
 endif()
-
-

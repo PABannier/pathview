@@ -18,6 +18,24 @@ target_include_directories(pathview_ipc PUBLIC
     ${CMAKE_SOURCE_DIR}/external/cpp-mcp/common  # For json.hpp
 )
 
+# Platform-specific IPC library dependencies
+if(WIN32)
+    # Windows: Link Winsock2 for TCP sockets
+    target_link_libraries(pathview_ipc PUBLIC ws2_32)
+endif()
+
+# MSVC-specific compile options for IPC library
+if(MSVC)
+    target_compile_options(pathview_ipc PRIVATE
+        /W4 /WX- /utf-8 /bigobj /MP
+    )
+    target_compile_definitions(pathview_ipc PRIVATE
+        _CRT_SECURE_NO_WARNINGS
+        NOMINMAX
+        WIN32_LEAN_AND_MEAN
+    )
+endif()
+
 # Link to main application
 target_link_libraries(pathview PRIVATE pathview_ipc)
 
@@ -51,12 +69,24 @@ target_include_directories(pathview-mcp PRIVATE
     ${CMAKE_SOURCE_DIR}/external/cpp-mcp/common
 )
 
+# Core link libraries (cross-platform)
 target_link_libraries(pathview-mcp PRIVATE
     pathview_ipc
     mcp
-    pthread
-    ${UUID_LIBRARY}
+    Threads::Threads
 )
+
+# MSVC-specific compile options for MCP server
+if(MSVC)
+    target_compile_options(pathview-mcp PRIVATE
+        /W4 /WX- /utf-8 /bigobj /MP
+    )
+    target_compile_definitions(pathview-mcp PRIVATE
+        _CRT_SECURE_NO_WARNINGS
+        NOMINMAX
+        WIN32_LEAN_AND_MEAN
+    )
+endif()
 
 # Place pathview-mcp at the root of the build folder (same level as pathview)
 set_target_properties(pathview-mcp PROPERTIES
@@ -64,13 +94,14 @@ set_target_properties(pathview-mcp PROPERTIES
 )
 
 # Platform-specific settings
-if(APPLE)
+if(WIN32)
+    # Windows: Winsock is linked via pathview_ipc
+    # No additional libraries needed
+elseif(APPLE)
     target_link_libraries(pathview-mcp PRIVATE
         "-framework CoreFoundation"
     )
-endif()
-
-if(UNIX AND NOT APPLE)
+elseif(UNIX)
     target_link_libraries(pathview-mcp PRIVATE dl)
 endif()
 

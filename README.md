@@ -8,9 +8,25 @@ A cross-platform C++ application for viewing whole-slide images (WSI) commonly u
 - Smooth zoom and pan navigation
 - Multi-resolution tile loading for performance
 - Overview minimap with click-to-jump
-- Cross-platform (macOS and Linux)
+- Cross-platform (Windows, macOS, and Linux)
 
 ## Prerequisites
+
+### Windows (MSVC)
+
+1. **Visual Studio 2019 or later** with C++ desktop development workload
+2. **vcpkg** - C++ package manager
+3. **OpenSlide Windows binaries** - Download from [openslide.org](https://openslide.org/download/)
+
+```powershell
+# Install vcpkg (if not already installed)
+git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
+cd C:\vcpkg
+.\bootstrap-vcpkg.bat
+
+# Set environment variable (add to system PATH for convenience)
+set VCPKG_ROOT=C:\vcpkg
+```
 
 ### macOS
 
@@ -29,7 +45,7 @@ sudo apt update
 sudo apt install cmake build-essential libopenslide-dev git curl
 ```
 
-### vcpkg Setup
+### vcpkg Setup (Unix)
 
 If not already installed via package manager:
 
@@ -46,7 +62,35 @@ export PATH=$VCPKG_ROOT:$PATH
 
 ## Building
 
-### 1. Install vcpkg Dependencies
+### Windows (MSVC)
+
+```powershell
+cd C:\path\to\pathview
+
+# Set triplet
+set VCPKG_DEFAULT_TRIPLET=x64-windows
+
+# Install vcpkg dependencies
+C:\vcpkg\vcpkg install
+
+# Download OpenSlide Windows binaries from https://openslide.org/download/
+# Extract to C:\openslide (or set OPENSLIDE_HOME environment variable)
+
+# Configure with CMake (Visual Studio 2022)
+cmake -B build -G "Visual Studio 17 2022" -A x64 ^
+  -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake ^
+  -DCMAKE_PREFIX_PATH=C:\openslide
+
+# Build Release
+cmake --build build --config Release
+
+# Run
+.\build\Release\pathview.exe
+```
+
+### macOS / Linux
+
+#### 1. Install vcpkg Dependencies
 
 ```bash
 cd /path/to/pathview
@@ -60,14 +104,14 @@ export VCPKG_DEFAULT_TRIPLET=arm64-osx
 # For Linux
 # export VCPKG_DEFAULT_TRIPLET=x64-linux
 
-# Install SDL2 via vcpkg (if using homebrew vcpkg)
+# Install dependencies via vcpkg (if using homebrew vcpkg)
 vcpkg install
 
 # Or if using vcpkg from source
 ~/vcpkg/vcpkg install
 ```
 
-### 2. Configure with CMake
+#### 2. Configure with CMake
 
 **Using Homebrew vcpkg (macOS)**:
 
@@ -85,13 +129,13 @@ cmake -B build \
   -DCMAKE_TOOLCHAIN_FILE=~/vcpkg/scripts/buildsystems/vcpkg.cmake
 ```
 
-### 3. Build
+#### 3. Build
 
 ```bash
 cmake --build build -j$(nproc)
 ```
 
-### 4. Run
+#### 4. Run
 
 ```bash
 ./build/pathview
@@ -190,6 +234,15 @@ pathview/
 
 ### Debug Build
 
+**Windows**:
+```powershell
+cmake -B build-debug -G "Visual Studio 17 2022" -A x64 ^
+  -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake
+
+cmake --build build-debug --config Debug
+```
+
+**macOS/Linux**:
 ```bash
 cmake -B build-debug \
   -DCMAKE_BUILD_TYPE=Debug \
@@ -199,6 +252,9 @@ cmake --build build-debug
 ```
 
 ### Debugging
+
+**Windows (Visual Studio)**:
+Open `build\pathview.sln` in Visual Studio and use the integrated debugger.
 
 **macOS**:
 ```bash
@@ -215,6 +271,13 @@ gdb ./build-debug/pathview
 ### OpenSlide Not Found
 
 Ensure OpenSlide is installed:
+
+**Windows**:
+```powershell
+# Download Windows binaries from https://openslide.org/download/
+# Extract and set OPENSLIDE_HOME or CMAKE_PREFIX_PATH
+cmake -B build ... -DCMAKE_PREFIX_PATH=C:\openslide
+```
 
 **macOS**:
 ```bash
@@ -296,7 +359,25 @@ The custom find module (`cmake/FindNFD.cmake`) searches in:
 1. `vcpkg_installed/<triplet>/` directory (project-local)
 2. System paths (`/opt/homebrew`, `/usr/local`, `/usr`)
 
-**Note**: On macOS, NFD requires the AppKit and UniformTypeIdentifiers frameworks. On Linux, it requires GTK3 (which the find module automatically detects via pkg-config).
+**Note**: On macOS, NFD requires the AppKit and UniformTypeIdentifiers frameworks. On Linux, it requires GTK3 (which the find module automatically detects via pkg-config). On Windows, NFD links against COM libraries (comctl32, ole32, uuid, shell32) automatically.
+
+### Windows-Specific Issues
+
+**vcpkg triplet mismatch**:
+Ensure you set the correct triplet before running vcpkg install:
+```powershell
+set VCPKG_DEFAULT_TRIPLET=x64-windows
+vcpkg install
+```
+
+**DLL not found errors at runtime**:
+Ensure the OpenSlide DLLs are in your PATH or copy them to the same directory as the executable:
+```powershell
+copy C:\openslide\bin\*.dll .\build\Release\
+```
+
+**Winsock initialization errors**:
+The application initializes Winsock automatically. If you see socket-related errors, ensure no firewall is blocking localhost connections on port 9999.
 
 ### ImGui Errors
 

@@ -5,6 +5,20 @@
 #include <vector>
 #include <string>
 
+// Cross-platform socket includes
+#ifdef _WIN32
+    #ifndef WIN32_LEAN_AND_MEAN
+        #define WIN32_LEAN_AND_MEAN
+    #endif
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
+    using socket_t = SOCKET;
+    #define INVALID_SOCKET_VALUE INVALID_SOCKET
+#else
+    using socket_t = int;
+    #define INVALID_SOCKET_VALUE (-1)
+#endif
+
 namespace pathview {
 namespace ipc {
 
@@ -18,11 +32,12 @@ using CommandHandler = std::function<json(const std::string& method, const json&
  * Disconnect callback function type
  * Called when a client disconnects
  */
-using DisconnectCallback = std::function<void(int clientFd)>;
+using DisconnectCallback = std::function<void(socket_t clientFd)>;
 
 /**
- * Unix domain socket server for IPC
+ * TCP socket server for IPC
  * Non-blocking, integrates with GUI event loop
+ * Cross-platform: works on Windows (Winsock) and Unix (BSD sockets)
  */
 class IPCServer {
 public:
@@ -35,15 +50,15 @@ public:
 
     /**
      * Start the IPC server
-     * Creates Unix domain socket at /tmp/pathview-{pid}.sock
-     * Creates symlink /tmp/pathview-latest.sock -> socket
+     * Binds to localhost on a specific port
+     * Writes port number to a file for discovery
      * @return true on success
      */
     bool Start();
 
     /**
      * Stop the IPC server
-     * Closes all connections and removes socket file
+     * Closes all connections and removes port file
      */
     void Stop();
 
@@ -57,12 +72,17 @@ public:
     /**
      * Check if server is running
      */
-    bool IsRunning() const { return serverFd_ >= 0; }
+    bool IsRunning() const { return serverFd_ != INVALID_SOCKET_VALUE; }
 
     /**
-     * Get the socket path
+     * Get the port number the server is listening on
      */
-    std::string GetSocketPath() const { return socketPath_; }
+    int GetPort() const { return port_; }
+
+    /**
+     * Get the port file path (for client discovery)
+     */
+    std::string GetPortFilePath() const;
 
     /**
      * Set callback for client disconnections
@@ -74,23 +94,39 @@ public:
     /**
      * Get client FD for current request (called during HandleRequest)
      */
-    int GetCurrentClientFd() const { return currentClientFd_; }
+    socket_t GetCurrentClientFd() const { return currentClientFd_; }
+
+    // Default port for IPC communication
+    static constexpr int DEFAULT_PORT = 9999;
 
 private:
     void AcceptConnections();
-    void HandleClient(int clientFd);
-    void RemoveClient(int clientFd);
+    void HandleClient(socket_t clientFd);
+    void RemoveClient(socket_t clientFd);
     IPCResponse HandleRequest(const IPCRequest& request);
+    
+    // Platform-specific helpers
+    static bool SetNonBlocking(socket_t fd);
+    static void CloseSocket(socket_t fd);
+    static std::string GetLastErrorString();
+    void WritePortFile();
+    void RemovePortFile();
 
     CommandHandler handler_;
-    int serverFd_;
-    std::string socketPath_;
-    std::vector<int> clients_;
+    socket_t serverFd_;
+    int port_;
+    std::vector<socket_t> clients_;
     DisconnectCallback disconnectCallback_;
-    int currentClientFd_;  // Set during HandleRequest
+    socket_t currentClientFd_;  // Set during HandleRequest
 
     static constexpr int MAX_CLIENTS = 5;
     static constexpr int BUFFER_SIZE = 65536;  // 64KB buffer for messages
+
+#ifdef _WIN32
+    static bool wsaInitialized_;
+    static bool InitializeWinsock();
+    static void CleanupWinsock();
+#endif
 };
 
 } // namespace ipc

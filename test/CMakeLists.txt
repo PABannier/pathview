@@ -54,6 +54,18 @@ target_include_directories(unit_tests PRIVATE
     ${PNG_INCLUDE_DIRS}
 )
 
+# MSVC-specific compile options
+if(MSVC)
+    target_compile_options(unit_tests PRIVATE
+        /W4 /WX- /utf-8 /bigobj /MP
+    )
+    target_compile_definitions(unit_tests PRIVATE
+        _CRT_SECURE_NO_WARNINGS
+        NOMINMAX
+        WIN32_LEAN_AND_MEAN
+    )
+endif()
+
 # Link only the necessary core components
 target_link_libraries(unit_tests PRIVATE
     GTest::gtest
@@ -94,6 +106,12 @@ target_sources(unit_tests PRIVATE
 # For SDL-dependent files, we need to link SDL2
 find_package(SDL2 CONFIG REQUIRED)
 target_link_libraries(unit_tests PRIVATE SDL2::SDL2)
+
+# Platform-specific libraries
+if(WIN32)
+    # Windows: Link Winsock for socket types in NavigationLock
+    target_link_libraries(unit_tests PRIVATE ws2_32)
+endif()
 
 # Register unit tests with CTest
 gtest_discover_tests(unit_tests

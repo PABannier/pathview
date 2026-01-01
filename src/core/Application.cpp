@@ -25,6 +25,9 @@
 #include <limits>
 #include <cfloat>
 #include <thread>
+#include <random>
+#include <sstream>
+#include <iomanip>
 
 Application::Application()
     : window_(nullptr)
@@ -51,7 +54,7 @@ bool Application::IsNavigationLocked() const {
     return navLock_->IsLocked() && !navLock_->IsExpired();
 }
 
-bool Application::IsNavigationOwnedByClient(int clientFd) const {
+bool Application::IsNavigationOwnedByClient(socket_t clientFd) const {
     if (!navLock_->IsLocked() || navLock_->IsExpired()) {
         return true;  // No lock active, anyone can navigate
     }
@@ -67,13 +70,26 @@ void Application::CheckLockExpiry() {
 }
 
 std::string Application::GenerateUUID() const {
-    uuid_t uuid;
-    uuid_generate_random(uuid);
-
-    char uuid_str[37];
-    uuid_unparse_lower(uuid, uuid_str);
-
-    return std::string(uuid_str);
+    // Cross-platform UUID v4 generation using <random>
+    static std::random_device rd;
+    static std::mt19937_64 gen(rd());
+    static std::uniform_int_distribution<uint64_t> dis;
+    
+    uint64_t ab = dis(gen);
+    uint64_t cd = dis(gen);
+    
+    // Set UUID version 4 and variant bits
+    ab = (ab & 0xFFFFFFFFFFFF0FFFULL) | 0x0000000000004000ULL;
+    cd = (cd & 0x3FFFFFFFFFFFFFFFULL) | 0x8000000000000000ULL;
+    
+    std::ostringstream ss;
+    ss << std::hex << std::setfill('0')
+       << std::setw(8) << (ab >> 32) << "-"
+       << std::setw(4) << ((ab >> 16) & 0xFFFF) << "-"
+       << std::setw(4) << (ab & 0xFFFF) << "-"
+       << std::setw(4) << (cd >> 48) << "-"
+       << std::setw(12) << (cd & 0xFFFFFFFFFFFFULL);
+    return ss.str();
 }
 
 bool Application::Initialize() {
@@ -188,7 +204,7 @@ bool Application::Initialize() {
         // Non-fatal - GUI works without IPC
     } else {
         // Set disconnect callback for lock auto-release
-        ipcServer_->SetDisconnectCallback([this](int clientFd) {
+        ipcServer_->SetDisconnectCallback([this](socket_t clientFd) {
             if (navLock_->IsLocked() && navLock_->GetClientFd() == clientFd) {
                 std::cout << "IPC client disconnected, releasing navigation lock for owner: "
                           << navLock_->GetOwnerUUID() << std::endl;
@@ -1159,7 +1175,7 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
             }
 
             // Check navigation lock
-            int currentClientFd = ipcServer_ ? ipcServer_->GetCurrentClientFd() : -1;
+            socket_t currentClientFd = ipcServer_ ? ipcServer_->GetCurrentClientFd() : INVALID_SOCKET_VALUE;
             if (!IsNavigationOwnedByClient(currentClientFd)) {
                 throw std::runtime_error(
                     std::string("Navigation locked by ") + navLock_->GetOwnerUUID() +
@@ -1183,7 +1199,7 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
             }
 
             // Check navigation lock
-            int currentClientFd = ipcServer_ ? ipcServer_->GetCurrentClientFd() : -1;
+            socket_t currentClientFd = ipcServer_ ? ipcServer_->GetCurrentClientFd() : INVALID_SOCKET_VALUE;
             if (!IsNavigationOwnedByClient(currentClientFd)) {
                 throw std::runtime_error(
                     std::string("Navigation locked by ") + navLock_->GetOwnerUUID() +
@@ -1211,7 +1227,7 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
             }
 
             // Check navigation lock
-            int currentClientFd = ipcServer_ ? ipcServer_->GetCurrentClientFd() : -1;
+            socket_t currentClientFd = ipcServer_ ? ipcServer_->GetCurrentClientFd() : INVALID_SOCKET_VALUE;
             if (!IsNavigationOwnedByClient(currentClientFd)) {
                 throw std::runtime_error(
                     std::string("Navigation locked by ") + navLock_->GetOwnerUUID() +
@@ -1239,7 +1255,7 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
             }
 
             // Check navigation lock
-            int currentClientFd = ipcServer_ ? ipcServer_->GetCurrentClientFd() : -1;
+            socket_t currentClientFd = ipcServer_ ? ipcServer_->GetCurrentClientFd() : INVALID_SOCKET_VALUE;
             if (!IsNavigationOwnedByClient(currentClientFd)) {
                 throw std::runtime_error(
                     std::string("Navigation locked by ") + navLock_->GetOwnerUUID() +
@@ -1265,7 +1281,7 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
             }
 
             // Check navigation lock
-            int currentClientFd = ipcServer_ ? ipcServer_->GetCurrentClientFd() : -1;
+            socket_t currentClientFd = ipcServer_ ? ipcServer_->GetCurrentClientFd() : INVALID_SOCKET_VALUE;
             if (!IsNavigationOwnedByClient(currentClientFd)) {
                 throw std::runtime_error(
                     std::string("Navigation locked by ") + navLock_->GetOwnerUUID() +
@@ -1289,7 +1305,7 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
             }
 
             // Check navigation lock
-            int currentClientFd = ipcServer_ ? ipcServer_->GetCurrentClientFd() : -1;
+            socket_t currentClientFd = ipcServer_ ? ipcServer_->GetCurrentClientFd() : INVALID_SOCKET_VALUE;
             if (!IsNavigationOwnedByClient(currentClientFd)) {
                 throw std::runtime_error(
                     std::string("Navigation locked by ") + navLock_->GetOwnerUUID() +
@@ -1474,7 +1490,7 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
                 {"stream_url", "http://127.0.0.1:8080/stream"},
                 {"stream_fps_default", 5},
                 {"stream_fps_max", 30},
-                {"ipc_socket", ipcServer_ ? ipcServer_->GetSocketPath() : ""},
+                {"ipc_port", ipcServer_ ? ipcServer_->GetPort() : 0},
                 {"navigation_locked", IsNavigationLocked()},
                 {"lock_owner", navLock_->IsLocked() ? navLock_->GetOwnerUUID() : ""}
             };
@@ -1538,7 +1554,7 @@ pathview::ipc::json Application::HandleIPCCommand(const std::string& method, con
             navLock_->SetOwnerUUID(ownerUUID);
             navLock_->SetGrantedTime(std::chrono::steady_clock::now());
             navLock_->SetTTL(std::chrono::milliseconds(ttlSeconds * 1000));
-            navLock_->SetClientFd(ipcServer_ ? ipcServer_->GetCurrentClientFd() : -1);
+            navLock_->SetClientFd(ipcServer_ ? ipcServer_->GetCurrentClientFd() : INVALID_SOCKET_VALUE);
 
             std::cout << "Navigation lock granted to " << ownerUUID
                       << " for " << ttlSeconds << "s" << std::endl;

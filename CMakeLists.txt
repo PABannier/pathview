@@ -14,6 +14,9 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 # Resource directory for fonts and icons
 set(RESOURCES_DIR "${CMAKE_SOURCE_DIR}/resources")
 
+# Find threading library (cross-platform)
+find_package(Threads REQUIRED)
+
 # Find SDL2 via vcpkg
 find_package(SDL2 CONFIG REQUIRED)
 
@@ -23,7 +26,7 @@ find_package(SDL2_image REQUIRED)
 # Find NFD using custom module (vcpkg's CONFIG mode can be unreliable)
 find_package(NFD REQUIRED)
 
-# Find Protobuf (use system/Homebrew version to match generated files)
+# Find Protobuf
 find_package(Protobuf REQUIRED)
 find_package(OpenSlide REQUIRED)
 
@@ -33,8 +36,11 @@ find_package(simdjson CONFIG REQUIRED)
 # Find PNG
 find_package(PNG REQUIRED)
 
-# Find UUID library
-if(APPLE)
+# Find UUID library (platform-specific)
+if(WIN32)
+    # Windows: No external UUID library needed - using built-in implementation
+    set(UUID_LIBRARY "")
+elseif(APPLE)
     # macOS has UUID in System framework
     find_library(UUID_LIBRARY System REQUIRED)
 else()
@@ -115,6 +121,22 @@ target_compile_definitions(pathview PRIVATE
     RESOURCES_DIR="${RESOURCES_DIR}"
 )
 
+# MSVC-specific compile options and definitions
+if(MSVC)
+    target_compile_options(pathview PRIVATE
+        /W4         # Warning level 4
+        /WX-        # Warnings are not errors (for now)
+        /utf-8      # UTF-8 source and execution character set
+        /bigobj     # Increase object file section limit
+        /MP         # Multi-processor compilation
+    )
+    target_compile_definitions(pathview PRIVATE
+        _CRT_SECURE_NO_WARNINGS     # Disable secure function warnings
+        NOMINMAX                     # Don't define min/max macros
+        WIN32_LEAN_AND_MEAN         # Exclude rarely-used Windows headers
+    )
+endif()
+
 # Link libraries
 target_link_libraries(pathview PRIVATE
     SDL2::SDL2
@@ -126,13 +148,24 @@ target_link_libraries(pathview PRIVATE
     absl::log_internal_check_op
     absl::log_internal_message
     absl::hash
-    ${UUID_LIBRARY}
     PNG::PNG
     simdjson::simdjson
+    Threads::Threads
 )
 
+# UUID library (only needed on macOS and Linux)
+if(UUID_LIBRARY)
+    target_link_libraries(pathview PRIVATE ${UUID_LIBRARY})
+endif()
+
 # Platform-specific settings
-if(APPLE)
+if(WIN32)
+    # Windows-specific: Link Winsock2 for TCP sockets
+    target_link_libraries(pathview PRIVATE ws2_32)
+    
+    # Add SDL2main for Windows entry point
+    target_link_libraries(pathview PRIVATE SDL2::SDL2main)
+elseif(APPLE)
     target_link_libraries(pathview PRIVATE
         "-framework CoreFoundation"
         "-framework ApplicationServices"
@@ -143,11 +176,9 @@ if(APPLE)
         BUILD_RPATH "@executable_path"
         INSTALL_RPATH "@executable_path"
     )
-endif()
-
-if(UNIX AND NOT APPLE)
+elseif(UNIX)
     # Linux-specific settings
-    target_link_libraries(pathview PRIVATE pthread dl)
+    target_link_libraries(pathview PRIVATE dl)
 
     set_target_properties(pathview PROPERTIES
         BUILD_RPATH "\$ORIGIN"
@@ -155,7 +186,7 @@ if(UNIX AND NOT APPLE)
     )
 endif()
 
-# Compiler warnings
+# Compiler warnings for GCC/Clang
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     target_compile_options(pathview PRIVATE
         -Wall -Wextra -Wpedantic
@@ -183,6 +214,8 @@ endif()
 message(STATUS "=== PathView Configuration ===")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "C++ standard: ${CMAKE_CXX_STANDARD}")
+message(STATUS "Platform: ${CMAKE_SYSTEM_NAME}")
+message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID}")
 message(STATUS "SDL2 found: ${SDL2_FOUND}")
 message(STATUS "OpenSlide found: ${OPENSLIDE_FOUND}")
 message(STATUS "OpenSlide include: ${OPENSLIDE_INCLUDE_DIRS}")

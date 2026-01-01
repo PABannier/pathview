@@ -1,10 +1,14 @@
 {
   "name": "pathview",
   "version": "0.1.0",
+  "description": "Cross-platform digital pathology slide viewer",
   "dependencies": [
     "sdl2",
     "sdl2-image",
     "nativefiledialog-extended",
-    "simdjson"
+    "simdjson",
+    "protobuf",
+    "abseil",
+    "libpng"
   ]
 }

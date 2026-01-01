@@ -13,7 +13,13 @@
 set(_VCPKG_INSTALLED_DIR "${CMAKE_SOURCE_DIR}/vcpkg_installed")
 
 # Determine vcpkg triplet
-if(APPLE)
+if(WIN32)
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        set(_VCPKG_TRIPLET "x64-windows")
+    else()
+        set(_VCPKG_TRIPLET "x86-windows")
+    endif()
+elseif(APPLE)
     if(CMAKE_OSX_ARCHITECTURES STREQUAL "x86_64" OR CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
         set(_VCPKG_TRIPLET "x64-osx")
     else()
@@ -21,18 +27,24 @@ if(APPLE)
     endif()
 elseif(UNIX)
     set(_VCPKG_TRIPLET "x64-linux")
-elseif(WIN32)
-    set(_VCPKG_TRIPLET "x64-windows")
 endif()
 
 # Search paths: vcpkg installed dir first, then system paths
-set(_SEARCH_PATHS
-    "${_VCPKG_INSTALLED_DIR}/${_VCPKG_TRIPLET}"
-    "${CMAKE_PREFIX_PATH}"
-    /opt/homebrew
-    /usr/local
-    /usr
-)
+if(WIN32)
+    set(_SEARCH_PATHS
+        "${_VCPKG_INSTALLED_DIR}/${_VCPKG_TRIPLET}"
+        "${CMAKE_PREFIX_PATH}"
+        "$ENV{SDL2_IMAGE_HOME}"
+    )
+else()
+    set(_SEARCH_PATHS
+        "${_VCPKG_INSTALLED_DIR}/${_VCPKG_TRIPLET}"
+        "${CMAKE_PREFIX_PATH}"
+        /opt/homebrew
+        /usr/local
+        /usr
+    )
+endif()
 
 # Find include directory
 find_path(SDL2_IMAGE_INCLUDE_DIR SDL_image.h
@@ -40,10 +52,17 @@ find_path(SDL2_IMAGE_INCLUDE_DIR SDL_image.h
     PATH_SUFFIXES include include/SDL2 SDL2)
 
 # Find the library
-find_library(SDL2_IMAGE_LIBRARY
-    NAMES SDL2_image SDL2_image-static libSDL2_image
-    PATHS ${_SEARCH_PATHS}
-    PATH_SUFFIXES lib)
+if(WIN32)
+    find_library(SDL2_IMAGE_LIBRARY
+        NAMES SDL2_image SDL2_image-static libSDL2_image
+        PATHS ${_SEARCH_PATHS}
+        PATH_SUFFIXES lib bin)
+else()
+    find_library(SDL2_IMAGE_LIBRARY
+        NAMES SDL2_image SDL2_image-static libSDL2_image
+        PATHS ${_SEARCH_PATHS}
+        PATH_SUFFIXES lib)
+endif()
 
 # Handle the REQUIRED argument and set SDL2_IMAGE_FOUND
 include(FindPackageHandleStandardArgs)
@@ -70,4 +89,3 @@ if(SDL2_IMAGE_FOUND)
     
     mark_as_advanced(SDL2_IMAGE_INCLUDE_DIR SDL2_IMAGE_LIBRARY)
 endif()
-

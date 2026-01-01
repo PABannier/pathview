@@ -4,7 +4,7 @@
  * Model Context Protocol server for remote control of PathView GUI
  *
  * Architecture:
- * - Connects to PathView GUI via Unix domain socket (IPC)
+ * - Connects to PathView GUI via TCP socket on localhost (IPC)
  * - Exposes MCP tools via HTTP+SSE transport (port 9000)
  * - Serves viewport snapshots via HTTP (port 8080)
  */
@@ -36,18 +36,18 @@ void signal_handler(int signal) {
 void print_usage(const char* progName) {
     std::cout << "Usage: " << progName << " [options]\n"
               << "\nOptions:\n"
-              << "  --socket PATH      Unix socket path (default: /tmp/pathview-latest.sock)\n"
+              << "  --ipc-port PORT    IPC port to connect to GUI (default: auto-detect from port file)\n"
               << "  --http-port PORT   HTTP server port (default: 8080)\n"
               << "  --mcp-port PORT    MCP server port (default: 9000)\n"
               << "  --help             Show this help message\n"
               << "\nExample:\n"
-              << "  " << progName << " --socket /tmp/pathview-1234.sock --http-port 8080\n"
+              << "  " << progName << " --ipc-port 9999 --http-port 8080\n"
               << std::endl;
 }
 
 int main(int argc, char** argv) {
     // Parse command line arguments
-    std::string socketPath = "/tmp/pathview-latest.sock";
+    int ipcPort = -1;  // -1 means auto-detect from port file
     int httpPort = 8080;
     int mcpPort = 9000;
 
@@ -57,8 +57,8 @@ int main(int argc, char** argv) {
         if (arg == "--help" || arg == "-h") {
             print_usage(argv[0]);
             return 0;
-        } else if (arg == "--socket" && i + 1 < argc) {
-            socketPath = argv[++i];
+        } else if (arg == "--ipc-port" && i + 1 < argc) {
+            ipcPort = std::atoi(argv[++i]);
         } else if (arg == "--http-port" && i + 1 < argc) {
             httpPort = std::atoi(argv[++i]);
         } else if (arg == "--mcp-port" && i + 1 < argc) {
@@ -70,6 +70,12 @@ int main(int argc, char** argv) {
         }
     }
 
+    // Auto-detect port if not specified
+    if (ipcPort < 0) {
+        ipcPort = pathview::ipc::IPCClient::ReadPortFromFile();
+        std::cout << "Auto-detected IPC port: " << ipcPort << std::endl;
+    }
+
     // Setup signal handlers
     std::signal(SIGINT, signal_handler);
     std::signal(SIGTERM, signal_handler);
@@ -77,8 +83,8 @@ int main(int argc, char** argv) {
     std::cout << "PathView MCP Server v0.1.0\n" << std::endl;
 
     // 1. Connect to GUI via IPC
-    std::cout << "Connecting to PathView GUI at " << socketPath << "..." << std::endl;
-    pathview::ipc::IPCClient ipcClient(socketPath);
+    std::cout << "Connecting to PathView GUI at localhost:" << ipcPort << "..." << std::endl;
+    pathview::ipc::IPCClient ipcClient(ipcPort);
 
     if (!ipcClient.Connect()) {
         std::cerr << "Failed to connect to GUI. Please ensure PathView is running." << std::endl;
@@ -86,7 +92,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    std::cout << "✓ Connected to GUI\n" << std::endl;
+    std::cout << "Connected to GUI\n" << std::endl;
 
     // 2. Create snapshot manager
     pathview::http::SnapshotManager snapshotManager(50);  // Max 50 snapshots
@@ -109,7 +115,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    std::cout << "✓ HTTP server running\n" << std::endl;
+    std::cout << "HTTP server running\n" << std::endl;
 
     // 5. Create and configure MCP server
     std::cout << "Initializing MCP server..." << std::endl;
@@ -117,26 +123,26 @@ int main(int argc, char** argv) {
     g_mcpServer = &mcpServer;
     mcpServer.RegisterTools();
 
-    std::cout << "✓ MCP server initialized\n" << std::endl;
+    std::cout << "MCP server initialized\n" << std::endl;
 
     // 6. Print status
-    std::cout << "═══════════════════════════════════════════════════════\n"
+    std::cout << "===========================================================\n"
               << " PathView MCP Server Ready!\n"
-              << "═══════════════════════════════════════════════════════\n"
+              << "===========================================================\n"
               << "\n"
               << "  MCP Server:  http://127.0.0.1:" << mcpPort << "\n"
               << "  SSE Endpoint: http://127.0.0.1:" << mcpPort << "/sse\n"
               << "  HTTP Server: http://127.0.0.1:" << httpPort << "\n"
-              << "  GUI Socket:  " << socketPath << "\n"
+              << "  GUI IPC:     localhost:" << ipcPort << "\n"
               << "\n"
               << "Available Tools:\n"
-              << "  • load_slide, get_slide_info\n"
-              << "  • pan, center_on, zoom, zoom_at_point, reset_view\n"
-              << "  • capture_snapshot\n"
-              << "  • load_polygons, query_polygons, set_polygon_visibility\n"
+              << "  - load_slide, get_slide_info\n"
+              << "  - pan, center_on, zoom, zoom_at_point, reset_view\n"
+              << "  - capture_snapshot\n"
+              << "  - load_polygons, query_polygons, set_polygon_visibility\n"
               << "\n"
               << "Press Ctrl+C to stop\n"
-              << "═══════════════════════════════════════════════════════\n"
+              << "===========================================================\n"
               << std::endl;
 
     // 7. Run MCP server (blocking)

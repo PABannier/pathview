@@ -4,9 +4,21 @@
 #include <memory>
 #include <string>
 #include <chrono>
-#include <uuid/uuid.h>
 #include <vector>
 #include <mutex>
+
+// Cross-platform socket type (must be defined before NavigationLock.h if not included)
+#ifdef _WIN32
+    #ifndef WIN32_LEAN_AND_MEAN
+        #define WIN32_LEAN_AND_MEAN
+    #endif
+    #include <winsock2.h>
+    using socket_t = SOCKET;
+    #define INVALID_SOCKET_VALUE INVALID_SOCKET
+#else
+    using socket_t = int;
+    #define INVALID_SOCKET_VALUE (-1)
+#endif
 
 class SlideLoader;
 class SlideRenderer;
@@ -79,7 +91,7 @@ private:
 
     // Navigation lock helpers
     bool IsNavigationLocked() const;
-    bool IsNavigationOwnedByClient(int clientFd) const;
+    bool IsNavigationOwnedByClient(socket_t clientFd) const;
     void CheckLockExpiry();
     std::string GenerateUUID() const;
 
