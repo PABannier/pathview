@@ -11,6 +11,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # Add custom CMake modules path (for FindOpenSlide, FindSDL2_image, and FindNFD)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
+# Prefer config packages (vcpkg) and fall back to custom modules/system.
+set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
+
 # Resource directory for fonts and icons
 set(RESOURCES_DIR "${CMAKE_SOURCE_DIR}/resources")
 
@@ -20,15 +23,29 @@ find_package(Threads REQUIRED)
 # Find SDL2 via vcpkg
 find_package(SDL2 CONFIG REQUIRED)
 
-# Find SDL2_image using custom module (vcpkg's CONFIG mode can be unreliable)
-find_package(SDL2_image REQUIRED)
+# Find SDL2_image (prefer config, fallback to module)
+find_package(SDL2_image CONFIG QUIET)
+if(NOT TARGET SDL2_image::SDL2_image AND NOT TARGET SDL2_image::SDL2_image-static)
+    find_package(SDL2_image REQUIRED)
+endif()
 
-# Find NFD using custom module (vcpkg's CONFIG mode can be unreliable)
-find_package(NFD REQUIRED)
+# Find nativefiledialog-extended (prefer config, fallback to module)
+find_package(nfd CONFIG QUIET)
+if(NOT TARGET nfd::nfd)
+    find_package(NFD REQUIRED)
+endif()
 
-# Find Protobuf
-find_package(Protobuf REQUIRED)
-find_package(OpenSlide REQUIRED)
+# Find Protobuf (prefer config, fallback to module)
+find_package(Protobuf CONFIG QUIET)
+if(NOT TARGET protobuf::libprotobuf AND NOT TARGET Protobuf::Protobuf)
+    find_package(Protobuf REQUIRED)
+endif()
+
+# Find OpenSlide (prefer config, fallback to module)
+find_package(OpenSlide CONFIG QUIET)
+if(NOT TARGET OpenSlide::OpenSlide)
+    find_package(OpenSlide REQUIRED)
+endif()
 
 # Find simdjson (for JSON polygon loading)
 find_package(simdjson CONFIG REQUIRED)
@@ -51,6 +68,35 @@ endif()
 
 # Find Abseil (required by modern protobuf for logging)
 find_package(absl CONFIG REQUIRED)
+
+# Resolve dependency targets for consistent linking.
+if(TARGET SDL2_image::SDL2_image)
+    set(PATHVIEW_SDL2_IMAGE_TARGET SDL2_image::SDL2_image)
+elseif(TARGET SDL2_image::SDL2_image-static)
+    set(PATHVIEW_SDL2_IMAGE_TARGET SDL2_image::SDL2_image-static)
+else()
+    set(PATHVIEW_SDL2_IMAGE_TARGET ${SDL2_IMAGE_LIBRARIES})
+endif()
+
+if(TARGET nfd::nfd)
+    set(PATHVIEW_NFD_TARGET nfd::nfd)
+else()
+    set(PATHVIEW_NFD_TARGET ${NFD_LIBRARIES})
+endif()
+
+if(TARGET OpenSlide::OpenSlide)
+    set(PATHVIEW_OPENSLIDE_TARGET OpenSlide::OpenSlide)
+else()
+    set(PATHVIEW_OPENSLIDE_TARGET ${OPENSLIDE_LIBRARIES})
+endif()
+
+if(TARGET protobuf::libprotobuf)
+    set(PATHVIEW_PROTOBUF_TARGET protobuf::libprotobuf)
+elseif(TARGET Protobuf::Protobuf)
+    set(PATHVIEW_PROTOBUF_TARGET Protobuf::Protobuf)
+else()
+    set(PATHVIEW_PROTOBUF_TARGET ${Protobuf_LIBRARIES})
+endif()
 
 # ImGui sources (compiled directly, not via vcpkg)
 set(IMGUI_DIR ${CMAKE_SOURCE_DIR}/external/imgui)
@@ -111,10 +157,19 @@ target_include_directories(pathview PRIVATE
     ${CMAKE_SOURCE_DIR}/resources/fonts
     ${IMGUI_DIR}
     ${IMGUI_DIR}/backends
-    ${OPENSLIDE_INCLUDE_DIRS}
-    ${Protobuf_INCLUDE_DIRS}
-    ${PNG_INCLUDE_DIRS}
 )
+
+if(NOT TARGET OpenSlide::OpenSlide AND OPENSLIDE_INCLUDE_DIRS)
+    target_include_directories(pathview PRIVATE ${OPENSLIDE_INCLUDE_DIRS})
+endif()
+
+if(NOT TARGET protobuf::libprotobuf AND NOT TARGET Protobuf::Protobuf AND Protobuf_INCLUDE_DIRS)
+    target_include_directories(pathview PRIVATE ${Protobuf_INCLUDE_DIRS})
+endif()
+
+if(NOT TARGET PNG::PNG AND PNG_INCLUDE_DIRS)
+    target_include_directories(pathview PRIVATE ${PNG_INCLUDE_DIRS})
+endif()
 
 # Add compile definitions for resource paths
 target_compile_definitions(pathview PRIVATE
@@ -140,10 +195,10 @@ endif()
 # Link libraries
 target_link_libraries(pathview PRIVATE
     SDL2::SDL2
-    $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_image>,SDL2_image::SDL2_image,SDL2_image::SDL2_image-static>
-    ${OPENSLIDE_LIBRARIES}
-    nfd::nfd
-    ${Protobuf_LIBRARIES}
+    ${PATHVIEW_SDL2_IMAGE_TARGET}
+    ${PATHVIEW_OPENSLIDE_TARGET}
+    ${PATHVIEW_NFD_TARGET}
+    ${PATHVIEW_PROTOBUF_TARGET}
     absl::log
     absl::log_internal_check_op
     absl::log_internal_message
@@ -217,9 +272,8 @@ message(STATUS "C++ standard: ${CMAKE_CXX_STANDARD}")
 message(STATUS "Platform: ${CMAKE_SYSTEM_NAME}")
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER_ID}")
 message(STATUS "SDL2 found: ${SDL2_FOUND}")
-message(STATUS "OpenSlide found: ${OPENSLIDE_FOUND}")
-message(STATUS "OpenSlide include: ${OPENSLIDE_INCLUDE_DIRS}")
-message(STATUS "OpenSlide library: ${OPENSLIDE_LIBRARIES}")
+message(STATUS "OpenSlide found: ${OpenSlide_FOUND}")
+message(STATUS "OpenSlide target: ${PATHVIEW_OPENSLIDE_TARGET}")
 message(STATUS "ImGui directory: ${IMGUI_DIR}")
 message(STATUS "Build MCP server: ${BUILD_MCP_SERVER}")
 message(STATUS "==============================")

@@ -8,216 +8,85 @@ on:
   workflow_dispatch:
 
 jobs:
-  test-ubuntu:
-    name: Ubuntu 22.04 Tests
-    runs-on: ubuntu-22.04
+  build-test:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            name: Ubuntu 22.04
+            triplet: x64-linux
+            generator: Ninja
+          - os: macos-14
+            name: macOS 14 (arm64)
+            triplet: arm64-osx
+            generator: Ninja
+
+    env:
+      VCPKG_FEATURE_FLAGS: manifests,binarycaching
+      VCPKG_BINARY_SOURCES: clear;x-gha,readwrite
+      VCPKG_INSTALLED_DIR: ${{ github.workspace }}/vcpkg_installed
+      VCPKG_TARGET_TRIPLET: ${{ matrix.triplet }}
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y \
-          build-essential \
-          cmake \
-          ninja-build \
-          libopenslide-dev \
-          libsdl2-dev \
-          libsdl2-image-dev \
-          protobuf-compiler \
-          libprotobuf-dev \
-          libabsl-dev \
-          pkg-config
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            ninja-build \
+            autoconf \
+            autoconf-archive \
+            automake \
+            libtool \
+            libopenslide-dev \
+            pkg-config \
+            libx11-dev \
+            libxext-dev \
+            libxrandr-dev \
+            libxinerama-dev \
+            libxcursor-dev \
+            libxi-dev \
+            libgl1-mesa-dev \
+            libglu1-mesa-dev \
+            libgtk-3-dev
 
-    - name: Install vcpkg
-      run: |
-        git clone https://github.com/Microsoft/vcpkg.git ~/vcpkg
-        ~/vcpkg/bootstrap-vcpkg.sh
-        echo "VCPKG_ROOT=$HOME/vcpkg" >> $GITHUB_ENV
+      - name: Install system dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install \
+            cmake \
+            ninja \
+            openslide \
+            pkg-config
 
-    - name: Install vcpkg dependencies
-      run: |
-        export VCPKG_DEFAULT_TRIPLET=x64-linux
-        ~/vcpkg/vcpkg install
+      - name: Setup vcpkg (Linux/macOS)
+        run: |
+          git clone https://github.com/Microsoft/vcpkg.git "$GITHUB_WORKSPACE/vcpkg"
+          "$GITHUB_WORKSPACE/vcpkg/bootstrap-vcpkg.sh"
+          echo "VCPKG_ROOT=$GITHUB_WORKSPACE/vcpkg" >> "$GITHUB_ENV"
 
-    - name: Configure CMake
-      run: |
-        cmake -B build \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_TOOLCHAIN_FILE=$HOME/vcpkg/scripts/buildsystems/vcpkg.cmake \
-          -DBUILD_TESTING=ON
+      - name: Configure CMake (Linux/macOS)
+        run: |
+          cmake -S . -B build -G "${{ matrix.generator }}" \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_TOOLCHAIN_FILE=$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake \
+            -DVCPKG_TARGET_TRIPLET=$VCPKG_TARGET_TRIPLET \
+            -DVCPKG_INSTALLED_DIR=$VCPKG_INSTALLED_DIR \
+            -DBUILD_TESTING=ON
 
-    - name: Build project
-      run: cmake --build build -j$(nproc)
+      - name: Build
+        run: cmake --build build --target pathview pathview-mcp unit_tests --config Release --parallel
 
-    - name: Run unit tests
-      run: |
-        chmod +x run_tests.sh
-        ./run_tests.sh || echo "Some unit tests failed"
-
-    # Note: MCP integration tests require a slide file which is not available in CI
-    # To run locally: ./run_mcp_tests.sh --slide /path/to/slide.svs
-
-    - name: Upload test results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results-ubuntu
-        path: |
-          build/test/*.xml
-          build/*.log
-        retention-days: 30
-
-  test-macos:
-    name: macOS 14 Tests (Apple Silicon)
-    runs-on: macos-14
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
-
-    - name: Install Homebrew dependencies
-      run: |
-        brew install \
-          cmake \
-          ninja \
-          openslide \
-          protobuf \
-          abseil \
-          vcpkg \
-          pkg-config
-
-    - name: Set vcpkg triplet
-      run: |
-        echo "VCPKG_DEFAULT_TRIPLET=arm64-osx" >> $GITHUB_ENV
-        echo "VCPKG_ROOT=$(brew --prefix vcpkg)" >> $GITHUB_ENV
-
-    - name: Install vcpkg dependencies
-      run: |
-        vcpkg install
-
-    - name: Configure CMake
-      run: |
-        cmake -B build \
-          -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_TOOLCHAIN_FILE=$(brew --prefix vcpkg)/scripts/buildsystems/vcpkg.cmake \
-          -DBUILD_TESTING=ON
-
-    - name: Build project
-      run: cmake --build build -j$(sysctl -n hw.ncpu)
-
-    - name: Run unit tests
-      run: |
-        chmod +x run_tests.sh
-        ./run_tests.sh || echo "Some unit tests failed"
-
-    # Note: MCP integration tests require a slide file which is not available in CI
-    # To run locally: ./run_mcp_tests.sh --slide /path/to/slide.svs
-
-    - name: Upload test results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results-macos
-        path: |
-          build/test/*.xml
-          build/*.log
-        retention-days: 30
-
-  test-windows:
-    name: Windows 2022 Tests (MSVC)
-    runs-on: windows-2022
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
-
-    - name: Setup MSVC
-      uses: microsoft/setup-msbuild@v2
-
-    - name: Setup vcpkg
-      run: |
-        git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
-        C:\vcpkg\bootstrap-vcpkg.bat
-        echo "VCPKG_ROOT=C:\vcpkg" >> $env:GITHUB_ENV
-        echo "VCPKG_DEFAULT_TRIPLET=x64-windows" >> $env:GITHUB_ENV
-
-    - name: Cache vcpkg packages
-      uses: actions/cache@v4
-      with:
-        path: C:\vcpkg\installed
-        key: vcpkg-windows-x64-${{ hashFiles('vcpkg.json') }}
-        restore-keys: |
-          vcpkg-windows-x64-
-
-    - name: Install vcpkg dependencies
-      run: |
-        C:\vcpkg\vcpkg install --triplet x64-windows
-
-    - name: Download OpenSlide Windows binaries
-      run: |
-        $openslideVersion = "4.0.0"
-        $openslideUrl = "https://github.com/openslide/openslide-bin/releases/download/v${openslideVersion}/openslide-win64-${openslideVersion}.zip"
-        Invoke-WebRequest -Uri $openslideUrl -OutFile openslide.zip
-        Expand-Archive -Path openslide.zip -DestinationPath C:\openslide
-        # Move contents up one level (removes version directory)
-        $innerDir = Get-ChildItem -Path C:\openslide -Directory | Select-Object -First 1
-        Move-Item -Path "$($innerDir.FullName)\*" -Destination C:\openslide -Force
-        Remove-Item -Path $innerDir.FullName -Recurse -Force
-        echo "OPENSLIDE_HOME=C:\openslide" >> $env:GITHUB_ENV
-        # Add OpenSlide bin to PATH for runtime DLL discovery
-        echo "C:\openslide\bin" >> $env:GITHUB_PATH
-
-    - name: Configure CMake
-      run: |
-        cmake -B build -G "Visual Studio 17 2022" -A x64 `
-          -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake `
-          -DCMAKE_PREFIX_PATH=C:\openslide `
-          -DBUILD_TESTING=ON
-
-    - name: Build project
-      run: cmake --build build --config Release --parallel
-
-    - name: Copy OpenSlide DLLs to build directory
-      run: |
-        Copy-Item -Path "C:\openslide\bin\*.dll" -Destination "build\Release\" -Force
-        Copy-Item -Path "C:\openslide\bin\*.dll" -Destination "build\test\" -Force -ErrorAction SilentlyContinue
-
-    - name: Run unit tests
-      run: |
-        cd build
-        ctest --build-config Release --output-on-failure --timeout 120
-      continue-on-error: true
-
-    # Note: MCP integration tests require a slide file which is not available in CI
-    # To run locally: .\run_mcp_tests.sh --slide C:\path\to\slide.svs
-
-    - name: Upload test results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-results-windows
-        path: |
-          build/test/*.xml
-          build/*.log
-          build/Testing/Temporary/LastTest.log
-        retention-days: 30
-
-    - name: Upload build artifacts
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: pathview-windows-x64
-        path: |
-          build/Release/pathview.exe
-          build/Release/pathview-mcp.exe
-          build/Release/*.dll
-        retention-days: 7
+      - name: Run unit tests
+        run: ctest --test-dir build --output-on-failure --timeout 120 -C Release
+        continue-on-error: true

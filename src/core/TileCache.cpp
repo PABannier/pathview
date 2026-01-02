@@ -1,5 +1,6 @@
 #include "TileCache.h"
 #include <iostream>
+#include <mutex>
 
 TileCache::TileCache(size_t maxMemoryBytes)
     : maxMemoryBytes_(maxMemoryBytes)

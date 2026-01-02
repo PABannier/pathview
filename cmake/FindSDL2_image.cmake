@@ -9,11 +9,23 @@
 # This module also creates the following imported targets:
 #  SDL2_image::SDL2_image-static - Static library target
 
-# First try to find via vcpkg installed paths (relative to source dir)
-set(_VCPKG_INSTALLED_DIR "${CMAKE_SOURCE_DIR}/vcpkg_installed")
+# Prefer vcpkg toolchain settings when available.
+if(DEFINED VCPKG_INSTALLED_DIR)
+    set(_VCPKG_INSTALLED_DIR "${VCPKG_INSTALLED_DIR}")
+elseif(DEFINED ENV{VCPKG_INSTALLED_DIR})
+    set(_VCPKG_INSTALLED_DIR "$ENV{VCPKG_INSTALLED_DIR}")
+elseif(DEFINED ENV{VCPKG_ROOT})
+    set(_VCPKG_INSTALLED_DIR "$ENV{VCPKG_ROOT}/installed")
+else()
+    set(_VCPKG_INSTALLED_DIR "${CMAKE_SOURCE_DIR}/vcpkg_installed")
+endif()
 
 # Determine vcpkg triplet
-if(WIN32)
+if(DEFINED VCPKG_TARGET_TRIPLET)
+    set(_VCPKG_TRIPLET "${VCPKG_TARGET_TRIPLET}")
+elseif(DEFINED ENV{VCPKG_DEFAULT_TRIPLET})
+    set(_VCPKG_TRIPLET "$ENV{VCPKG_DEFAULT_TRIPLET}")
+elseif(WIN32)
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
         set(_VCPKG_TRIPLET "x64-windows")
     else()

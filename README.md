@@ -70,16 +70,18 @@ cd C:\path\to\pathview
 # Set triplet
 set VCPKG_DEFAULT_TRIPLET=x64-windows
 
-# Install vcpkg dependencies
-C:\vcpkg\vcpkg install
-
 # Download OpenSlide Windows binaries from https://openslide.org/download/
 # Extract to C:\openslide (or set OPENSLIDE_HOME environment variable)
 
 # Configure with CMake (Visual Studio 2022)
 cmake -B build -G "Visual Studio 17 2022" -A x64 ^
-  -DCMAKE_TOOLCHAIN_FILE=C:\vcpkg\scripts\buildsystems\vcpkg.cmake ^
+  -DCMAKE_TOOLCHAIN_FILE=%VCPKG_ROOT%\scripts\buildsystems\vcpkg.cmake ^
+  -DVCPKG_TARGET_TRIPLET=x64-windows ^
   -DCMAKE_PREFIX_PATH=C:\openslide
+
+# CMake will install vcpkg dependencies from vcpkg.json (manifest mode).
+# Optional: pre-install to warm caches
+# %VCPKG_ROOT%\vcpkg install --triplet x64-windows
 
 # Build Release
 cmake --build build --config Release
@@ -90,25 +92,19 @@ cmake --build build --config Release
 
 ### macOS / Linux
 
-#### 1. Install vcpkg Dependencies
+#### 1. Configure with CMake (vcpkg manifest)
 
 ```bash
 cd /path/to/pathview
 
 # For macOS Apple Silicon
-export VCPKG_DEFAULT_TRIPLET=arm64-osx
+export VCPKG_TARGET_TRIPLET=arm64-osx
 
 # For macOS Intel
-# export VCPKG_DEFAULT_TRIPLET=x64-osx
+# export VCPKG_TARGET_TRIPLET=x64-osx
 
 # For Linux
-# export VCPKG_DEFAULT_TRIPLET=x64-linux
-
-# Install dependencies via vcpkg (if using homebrew vcpkg)
-vcpkg install
-
-# Or if using vcpkg from source
-~/vcpkg/vcpkg install
+# export VCPKG_TARGET_TRIPLET=x64-linux
 ```
 
 #### 2. Configure with CMake
@@ -291,7 +287,7 @@ dpkg -l | grep openslide
 pkg-config --libs openslide
 ```
 
-If installed but not found, set `CMAKE_PREFIX_PATH`:
+If installed but not found, set `CMAKE_PREFIX_PATH` (or use a vcpkg OpenSlide build if available):
 
 ```bash
 cmake -B build -DCMAKE_PREFIX_PATH=/opt/homebrew ...  # macOS Homebrew
@@ -309,7 +305,7 @@ Ensure the correct triplet is set for your architecture.
 
 ### SDL2_image Not Found
 
-The project uses a custom `FindSDL2_image.cmake` module to locate SDL2_image because vcpkg's CMake config files can be unreliable across platforms.
+The project prefers SDL2_image's vcpkg config package and falls back to a custom `FindSDL2_image.cmake` module for system installs.
 
 First, verify SDL2_image is installed:
 
@@ -343,7 +339,7 @@ The custom find module (`cmake/FindSDL2_image.cmake`) searches in:
 
 ### NFD (Native File Dialog) Not Found
 
-Similar to SDL2_image, the project uses a custom `FindNFD.cmake` module to locate nativefiledialog-extended.
+The project prefers the vcpkg `nfd` config package and falls back to a custom `FindNFD.cmake` module if needed.
 
 Verify installation:
 

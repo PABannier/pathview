@@ -17,12 +17,34 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 include(GoogleTest)
 
-# Find dependencies for tests
-find_package(OpenSlide REQUIRED)
-find_package(Protobuf REQUIRED)
+# Find dependencies for tests (prefer config packages, fallback to modules)
+find_package(OpenSlide CONFIG QUIET)
+if(NOT TARGET OpenSlide::OpenSlide)
+    find_package(OpenSlide REQUIRED)
+endif()
+
+find_package(Protobuf CONFIG QUIET)
+if(NOT TARGET protobuf::libprotobuf AND NOT TARGET Protobuf::Protobuf)
+    find_package(Protobuf REQUIRED)
+endif()
+
 find_package(absl CONFIG REQUIRED)
 find_package(PNG REQUIRED)
 find_package(simdjson CONFIG REQUIRED)
+
+if(TARGET OpenSlide::OpenSlide)
+    set(PATHVIEW_OPENSLIDE_TARGET OpenSlide::OpenSlide)
+else()
+    set(PATHVIEW_OPENSLIDE_TARGET ${OPENSLIDE_LIBRARIES})
+endif()
+
+if(TARGET protobuf::libprotobuf)
+    set(PATHVIEW_PROTOBUF_TARGET protobuf::libprotobuf)
+elseif(TARGET Protobuf::Protobuf)
+    set(PATHVIEW_PROTOBUF_TARGET Protobuf::Protobuf)
+else()
+    set(PATHVIEW_PROTOBUF_TARGET ${Protobuf_LIBRARIES})
+endif()
 
 # ============================================================================
 # Unit Tests (Pure C++ - No SDL dependencies)
@@ -49,10 +71,31 @@ target_include_directories(unit_tests PRIVATE
     ${CMAKE_SOURCE_DIR}/protobuf
     ${CMAKE_SOURCE_DIR}/test/mocks
     ${CMAKE_SOURCE_DIR}/external/cpp-mcp/common  # For json.hpp
-    ${OPENSLIDE_INCLUDE_DIRS}
-    ${Protobuf_INCLUDE_DIRS}
-    ${PNG_INCLUDE_DIRS}
 )
+
+# Ensure protobuf headers from the linked library are preferred over system paths.
+set(PATHVIEW_PROTOBUF_INCLUDE_DIRS "")
+if(TARGET ${PATHVIEW_PROTOBUF_TARGET})
+    get_target_property(PATHVIEW_PROTOBUF_INCLUDE_DIRS ${PATHVIEW_PROTOBUF_TARGET} INTERFACE_INCLUDE_DIRECTORIES)
+elseif(Protobuf_INCLUDE_DIRS)
+    set(PATHVIEW_PROTOBUF_INCLUDE_DIRS ${Protobuf_INCLUDE_DIRS})
+endif()
+
+if(PATHVIEW_PROTOBUF_INCLUDE_DIRS)
+    target_include_directories(unit_tests SYSTEM BEFORE PRIVATE ${PATHVIEW_PROTOBUF_INCLUDE_DIRS})
+endif()
+
+if(NOT TARGET OpenSlide::OpenSlide AND OPENSLIDE_INCLUDE_DIRS)
+    target_include_directories(unit_tests PRIVATE ${OPENSLIDE_INCLUDE_DIRS})
+endif()
+
+if(NOT TARGET protobuf::libprotobuf AND NOT TARGET Protobuf::Protobuf AND Protobuf_INCLUDE_DIRS)
+    target_include_directories(unit_tests PRIVATE ${Protobuf_INCLUDE_DIRS})
+endif()
+
+if(NOT TARGET PNG::PNG AND PNG_INCLUDE_DIRS)
+    target_include_directories(unit_tests PRIVATE ${PNG_INCLUDE_DIRS})
+endif()
 
 # MSVC-specific compile options
 if(MSVC)
@@ -71,8 +114,8 @@ target_link_libraries(unit_tests PRIVATE
     GTest::gtest
     GTest::gtest_main
     GTest::gmock
-    ${OPENSLIDE_LIBRARIES}
-    ${Protobuf_LIBRARIES}
+    ${PATHVIEW_OPENSLIDE_TARGET}
+    ${PATHVIEW_PROTOBUF_TARGET}
     absl::log
     absl::log_internal_check_op
     absl::log_internal_message
