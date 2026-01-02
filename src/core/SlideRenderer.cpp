@@ -132,8 +132,8 @@ std::vector<TileKey> SlideRenderer::EnumerateVisibleTiles(const Viewport& viewpo
     auto levelDims = loader_->GetLevelDimensions(level);
 
     // Clamp to level bounds
-    levelLeft = std::max(0LL, levelLeft);
-    levelTop = std::max(0LL, levelTop);
+    levelLeft = std::max<int64_t>(0, levelLeft);
+    levelTop = std::max<int64_t>(0, levelTop);
     levelRight = std::min(levelDims.width, levelRight);
     levelBottom = std::min(levelDims.height, levelBottom);
 
