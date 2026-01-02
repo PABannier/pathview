@@ -48,6 +48,10 @@ jobs:
             build-essential \
             cmake \
             ninja-build \
+            autoconf \
+            autoconf-archive \
+            automake \
+            libtool \
             libopenslide-dev \
             pkg-config \
             libx11-dev \
