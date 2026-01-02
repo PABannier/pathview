@@ -85,7 +85,12 @@ jobs:
         shell: pwsh
         run: |
           git clone https://github.com/Microsoft/vcpkg.git "$env:GITHUB_WORKSPACE\vcpkg"
-          & "$env:GITHUB_WORKSPACE\vcpkg\bootstrap-vcpkg.bat"
+          $prebuilt = "C:\vcpkg\vcpkg.exe"
+          if (Test-Path $prebuilt) {
+            Copy-Item $prebuilt "$env:GITHUB_WORKSPACE\vcpkg\vcpkg.exe" -Force
+          } else {
+            & "$env:GITHUB_WORKSPACE\vcpkg\bootstrap-vcpkg.bat"
+          }
           "VCPKG_ROOT=$env:GITHUB_WORKSPACE\vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Download OpenSlide (Windows)
