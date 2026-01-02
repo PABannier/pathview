@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.20)
-project(pathview CXX)
+
+# Read version from VERSION file
+file(READ "${CMAKE_SOURCE_DIR}/VERSION" PATHVIEW_VERSION)
+string(STRIP "${PATHVIEW_VERSION}" PATHVIEW_VERSION)
+
+project(pathview VERSION ${PATHVIEW_VERSION} LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -267,6 +272,7 @@ endif()
 
 # Print configuration summary
 message(STATUS "=== PathView Configuration ===")
+message(STATUS "Version: ${PROJECT_VERSION}")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "C++ standard: ${CMAKE_CXX_STANDARD}")
 message(STATUS "Platform: ${CMAKE_SYSTEM_NAME}")

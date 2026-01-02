@@ -1,6 +1,6 @@
 # PathView
 
-[![CI](https://github.com/PABannier/PathView/actions/workflows/test.yml/badge.svg)](https://github.com/PABannier/PathView/actions/workflows/test.yml/badge.svg)
+[![CICD](https://github.com/PABannier/PathView/actions/workflows/CICD.yml/badge.svg)](https://github.com/PABannier/PathView/actions/workflows/CICD.yml/badge.svg)
 
 PathView is a cross-platform C++ whole-slide image (WSI) viewer for digital pathology. It combines OpenSlide, SDL2, and Dear ImGui with high-performance tiled rendering and polygon overlays for cell segmentation data.
 

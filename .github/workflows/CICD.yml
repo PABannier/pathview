@@ -5,12 +5,18 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch:
+  release:
+    types: [ published ]
+
+permissions:
+  contents: read
 
 jobs:
   build-test:
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: ${{ github.event_name == 'release' && 'write' || 'read' }}
     strategy:
       fail-fast: false
       matrix:
@@ -90,3 +96,22 @@ jobs:
       - name: Run unit tests
         run: ctest --test-dir build --output-on-failure --timeout 120 -C Release
         continue-on-error: true
+
+      - name: Read version
+        if: github.event_name == 'release'
+        id: version
+        run: echo "version=$(cat VERSION)" >> "$GITHUB_OUTPUT"
+
+      - name: Package artifacts
+        if: github.event_name == 'release'
+        run: |
+          mkdir -p dist
+          cp build/pathview dist/
+          cp build/pathview-mcp dist/
+          tar -czvf pathview-${{ steps.version.outputs.version }}-${{ matrix.triplet }}.tar.gz -C dist .
+
+      - name: Upload release artifacts
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: pathview-${{ steps.version.outputs.version }}-${{ matrix.triplet }}.tar.gz
