@@ -2,7 +2,9 @@
 
 [![CICD](https://github.com/PABannier/PathView/actions/workflows/CICD.yml/badge.svg)](https://github.com/PABannier/PathView/actions/workflows/CICD.yml/badge.svg)
 
-PathView is a cross-platform C++ whole-slide image (WSI) viewer for digital pathology. It combines OpenSlide, SDL2, and Dear ImGui with high-performance tiled rendering and polygon overlays for cell segmentation data.
+PathView is a whole-slide image (WSI) viewer for digital pathology. It combines high-performance tiled rendering and polygon overlays for cell segmentation data.
+
+![PathView preview](./assets/pathview.gif)
 
 ## Features
 
@@ -10,6 +12,7 @@ PathView is a cross-platform C++ whole-slide image (WSI) viewer for digital path
 - Overview minimap with click-to-jump navigation
 - Polygon overlay rendering with class-based styling (protobuf)
 - Cross-platform support: macOS, Linux
+- MCP server for programmatic control, screenshots, and ROI analysis
 
 ## Requirements
 
